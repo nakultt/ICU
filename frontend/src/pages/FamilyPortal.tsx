@@ -21,7 +21,12 @@ export default function FamilyPortal() {
     } catch (err) { console.error(err); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    // Poll every 5 seconds so incoming calls from nurse show up
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   const handleLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,8 +57,35 @@ export default function FamilyPortal() {
     } catch (err) { alert(err); }
   };
 
+  // Find the most recent approved visit as the "incoming call"
+  const approvedVisits = visits.filter((v: any) => v.status === 'approved');
+  const incomingCall = approvedVisits.length > 0 ? approvedVisits[approvedVisits.length - 1] : null;
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-10 min-h-screen">
+      {/* Incoming Call Banner */}
+      {incomingCall && (
+        <div className="bg-green-500 text-white p-5 rounded-2xl shadow-xl shadow-green-200 flex items-center justify-between animate-pulse">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+              <Video className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="font-black text-lg">📞 Incoming Video Call</div>
+              <div className="text-green-100 text-sm">
+                {patients.find((p: any) => p.id === incomingCall.patient_id)?.full_name || 'Patient'} — tap to join now
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(`/visit/${incomingCall.id}`)}
+            className="bg-white text-green-600 px-6 py-3 rounded-xl font-black text-lg shadow-lg hover:bg-green-50 transition-all active:scale-95"
+          >
+            Join Call
+          </button>
+        </div>
+      )}
+
       <header className="flex items-center justify-between py-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">

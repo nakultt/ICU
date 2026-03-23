@@ -1,79 +1,59 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, getUserRole } from '../api';
-import DailyIframe from '@daily-co/daily-js';
+import { api, getUserRole, getUserId } from '../api';
+import { useVideoCall } from '../hooks/useVideoCall';
 import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart } from 'lucide-react';
 
 export default function VisitRoom() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [callFrame, setCallFrame] = useState<any>(null);
   const [showMood, setShowMood] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [videoOff, setVideoOff] = useState(false);
 
+  const role = getUserRole() || 'family';
+  const peerId = `${role}-${id}`;
+  const otherPeerId = role === 'nurse' ? `family-${id}` : `nurse-${id}`;
+
+  const {
+    localVideoRef,
+    remoteVideoRef,
+    status,
+    isMuted,
+    isVideoOff,
+    startCall,
+    endCall,
+    toggleMic,
+    toggleVideo,
+  } = useVideoCall({
+    roomId: id || '',
+    peerId,
+    autoStart: role === 'nurse', // Nurse auto-initiates
+  });
+
+  // If family joins and the nurse is already waiting, start the call
   useEffect(() => {
-    const loadAndStart = async () => {
-      try {
-        if (!id) return;
-        const found = await api.visits.getById(id);
-        if (!found || !found.room_url) {
-          alert(`Visit error: ${!found ? 'NotFound' : 'NoRoomUrl'}`);
-          navigate('/');
-          return;
-        }
+    if (role === 'family' && status === 'waiting') {
+      // Family will receive the offer from nurse — handled by hook automatically
+    }
+  }, [role, status]);
 
-        // Daily.co integration
-        const frame = DailyIframe.createFrame(
-          document.getElementById('video-container') as HTMLElement,
-          {
-            iframeStyle: {
-              width: '100%',
-              height: '100%',
-              border: '0',
-              borderRadius: '24px',
-            },
-            showLeaveButton: false,
-            showFullscreenButton: true,
-          }
-        );
-
-        await frame.join({ url: found.room_url });
-        setCallFrame(frame);
-
-      } catch (err) {
-        console.error(err);
-        navigate('/');
-      }
-    };
-    loadAndStart();
-
-    return () => {
-      if (callFrame) callFrame.destroy();
-    };
-  }, [id, navigate]); // callFrame is handled via cleanup
-
-  const handleEnd = useCallback(async () => {
-    if (callFrame) await callFrame.leave();
+  const handleEnd = useCallback(() => {
+    endCall();
     setShowMood(true);
-  }, [callFrame]);
+  }, [endCall]);
 
   const handleMood = async (score: number) => {
     if (id) await api.visits.logMood(id, score);
-    navigate(getUserRole() === 'nurse' ? '/nurse' : '/family');
+    navigate(role === 'nurse' ? '/nurse' : '/family');
   };
 
-  const toggleMic = () => {
-    if (!callFrame) return;
-    callFrame.setLocalAudio(muted);
-    setMuted(!muted);
-  };
-
-  const toggleVideo = () => {
-    if (!callFrame) return;
-    callFrame.setLocalVideo(videoOff);
-    setVideoOff(!videoOff);
-  };
+  const statusLabel = {
+    idle: 'Initializing...',
+    connecting: 'Connecting...',
+    waiting: 'Waiting for other person to join...',
+    incoming: 'Incoming call...',
+    connected: '',
+    ended: 'Call ended',
+  }[status];
 
   return (
     <div className="fixed inset-0 bg-gray-950 flex flex-col p-4 sm:p-6 overflow-hidden">
@@ -85,30 +65,76 @@ export default function VisitRoom() {
           </div>
           <div>
              <h3 className="text-white font-bold leading-tight">Live Visit Session</h3>
-             <p className="text-blue-400 text-xs tracking-widest uppercase font-black">Encrypted • Secure</p>
+             <p className="text-blue-400 text-xs tracking-widest uppercase font-black">WebRTC • Peer-to-Peer</p>
           </div>
         </div>
-        <div className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-black animate-pulse">LIVE</div>
+        <div className="flex items-center gap-3">
+          {status === 'connected' && (
+            <div className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-black animate-pulse">LIVE</div>
+          )}
+          {statusLabel && (
+            <div className="text-gray-400 text-sm font-medium">{statusLabel}</div>
+          )}
+        </div>
       </div>
 
       {/* Video Container */}
-      <div className="flex-1 min-h-0 bg-gray-900 rounded-[2rem] relative shadow-2xl overflow-hidden">
-        <div id="video-container" className="w-full h-full" />
+      <div className="flex-1 min-h-0 relative">
+        {/* Remote video (large) */}
+        <div className="w-full h-full bg-gray-900 rounded-[2rem] shadow-2xl overflow-hidden">
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-full object-cover"
+          />
+          {status !== 'connected' && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-gray-800 rounded-full flex items-center justify-center">
+                  <VideoIcon className="w-10 h-10 text-gray-600" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium">
+                  {status === 'waiting' ? 'Waiting for the other person...' : 'Connecting...'}
+                </p>
+                <div className="flex justify-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Local video (small overlay) */}
+        <div className="absolute bottom-4 right-4 w-40 h-28 sm:w-52 sm:h-36 bg-gray-800 rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 z-10">
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-full h-full object-cover mirror"
+          />
+          <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+            You
+          </div>
+        </div>
       </div>
 
       {/* Controls Bar */}
       <div className="py-6 flex justify-center items-center gap-4 sm:gap-6 z-10">
         <button 
           onClick={toggleMic}
-          className={`p-5 rounded-3xl transition-all active:scale-95 ${muted ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+          className={`p-5 rounded-3xl transition-all active:scale-95 ${isMuted ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
         >
-          {muted ? <MicOff className="w-7 h-7" /> : <Mic className="w-7 h-7" />}
+          {isMuted ? <MicOff className="w-7 h-7" /> : <Mic className="w-7 h-7" />}
         </button>
         <button 
           onClick={toggleVideo}
-          className={`p-5 rounded-3xl transition-all active:scale-95 ${videoOff ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+          className={`p-5 rounded-3xl transition-all active:scale-95 ${isVideoOff ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
         >
-          {videoOff ? <VideoOff className="w-7 h-7" /> : <VideoIcon className="w-7 h-7" />}
+          {isVideoOff ? <VideoOff className="w-7 h-7" /> : <VideoIcon className="w-7 h-7" />}
         </button>
         <button className="p-5 bg-gray-800 text-gray-300 hover:bg-gray-700 rounded-3xl transition-all active:scale-95">
           <MessageSquare className="w-7 h-7" />
@@ -151,6 +177,13 @@ export default function VisitRoom() {
           </div>
         </div>
       )}
+
+      {/* Mirror CSS for local video */}
+      <style>{`
+        .mirror {
+          transform: scaleX(-1);
+        }
+      `}</style>
     </div>
   );
 }

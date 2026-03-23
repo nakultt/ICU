@@ -40,10 +40,17 @@ async def create_visit(req: VisitCreate, db: AsyncSession = Depends(get_db), use
 
 @router.get("", response_model=List[VisitResponse])
 async def list_visits(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
-    if user.role == "nurse":
+    if user.role in ("nurse", "admin"):
         result = await db.execute(select(Visit))
     else:
-        result = await db.execute(select(Visit).where(Visit.family_user_id == user.id))
+        # Family: show visits they created OR visits for any patient they're linked to
+        from ..models import FamilyLink
+        linked_patient_ids = select(FamilyLink.patient_id).where(FamilyLink.user_id == user.id)
+        result = await db.execute(
+            select(Visit).where(
+                (Visit.family_user_id == user.id) | (Visit.patient_id.in_(linked_patient_ids))
+            )
+        )
     return result.scalars().all()
 
 @router.get("/{visit_id}", response_model=VisitResponse)
