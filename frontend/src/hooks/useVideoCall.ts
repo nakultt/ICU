@@ -160,6 +160,13 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
       const msg = JSON.parse(event.data);
 
       switch (msg.type) {
+        case "room-peers":
+          // Server tells us who's already in the room
+          if (autoStart && !hasStartedRef.current && msg.peers?.length > 0) {
+            startCall(msg.peers[0]);
+          }
+          break;
+
         case "peer-joined":
           // Another peer joined — if we should auto-start, initiate the call
           if (autoStart && !hasStartedRef.current) {
