@@ -42,6 +42,7 @@ export const api = {
     create: (data: any) => request("/visits", { method: "POST", body: JSON.stringify(data) }),
     approve: (id: string) => request(`/visits/${id}/approve`, { method: "PATCH" }),
     instant: (patient_id: string) => request("/visits/instant", { method: "POST", body: JSON.stringify({ patient_id }) }),
+    complete: (id: string) => request(`/visits/${id}/complete`, { method: "PATCH" }),
     logMood: (visitId: string, score: number) => 
       request("/visits/mood", { method: "POST", body: JSON.stringify({ visit_id: visitId, score }) }),
   }

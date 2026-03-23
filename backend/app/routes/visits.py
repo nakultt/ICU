@@ -105,6 +105,14 @@ async def approve_visit(visit_id: str, db: AsyncSession = Depends(get_db), user:
 
 @router.post("/instant", response_model=VisitResponse)
 async def create_instant_visit(patient_id: str = Body(..., embed=True), db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    # Check if there's already an active (approved) visit for this patient — reuse it
+    existing = await db.execute(
+        select(Visit).where(Visit.patient_id == patient_id, Visit.status == "approved")
+    )
+    existing_visit = existing.scalar_one_or_none()
+    if existing_visit:
+        return existing_visit
+
     from ..models import generate_uuid
     visit_id = generate_uuid()
     
@@ -115,37 +123,23 @@ async def create_instant_visit(patient_id: str = Body(..., embed=True), db: Asyn
         family_user_id=user.id,
         scheduled_date=datetime.utcnow().strftime("%Y-%m-%d"),
         scheduled_time=datetime.utcnow().strftime("%H:%M"),
-        status="approved"
+        status="approved",
+        room_url="",
     )
-    
-    # Generate room URL
-    room_url = f"https://visicare.daily.co/instant-{visit_id[:8]}"
-    
-    if settings.DAILY_API_KEY:
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.daily.co/v1/rooms",
-                    headers={"Authorization": f"Bearer {settings.DAILY_API_KEY}"},
-                    json={
-                        "name": f"instant-{visit.id[:12]}",
-                        "properties": {
-                            "exp": int(datetime.utcnow().timestamp()) + 3600,
-                            "enable_screenshare": False,
-                        }
-                    },
-                    timeout=10.0
-                )
-                if response.status_code in (200, 201):
-                    room_url = response.json()["url"]
-        except Exception:
-            pass
-
-    visit.room_url = room_url
     db.add(visit)
     await db.commit()
     await db.refresh(visit)
     return visit
+
+@router.patch("/{visit_id}/complete")
+async def complete_visit(visit_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    result = await db.execute(select(Visit).where(Visit.id == visit_id))
+    visit = result.scalar_one_or_none()
+    if not visit:
+        raise HTTPException(status_code=404, detail="Visit not found")
+    visit.status = "completed"
+    await db.commit()
+    return {"status": "completed"}
 
 @router.post("/mood")
 async def log_mood(visit_id: str = Body(...), score: int = Body(...), db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):

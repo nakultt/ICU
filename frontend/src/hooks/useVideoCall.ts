@@ -145,8 +145,14 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     const ws = new WebSocket(`${wsBase}/ws/${roomId}/${peerId}`);
     wsRef.current = ws;
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
       console.log(`[WebRTC] Connected to signaling as ${peerId} in room ${roomId}`);
+      // Start camera immediately so user sees their own video
+      try {
+        await getLocalStream();
+      } catch (e) {
+        console.error("[WebRTC] Camera access denied:", e);
+      }
       setStatus("waiting");
     };
 
@@ -191,7 +197,7 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
       ws.close();
       wsRef.current = null;
     };
-  }, [roomId, peerId, autoStart, startCall, handleOffer, handleAnswer, handleIce]);
+  }, [roomId, peerId, autoStart, getLocalStream, startCall, handleOffer, handleAnswer, handleIce]);
 
   const endCall = useCallback(() => {
     if (pcRef.current) {

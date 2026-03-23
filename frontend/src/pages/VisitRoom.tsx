@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, getUserRole, getUserId } from '../api';
+import { api, getUserRole } from '../api';
 import { useVideoCall } from '../hooks/useVideoCall';
 import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart } from 'lucide-react';
 
@@ -11,7 +11,7 @@ export default function VisitRoom() {
 
   const role = getUserRole() || 'family';
   const peerId = `${role}-${id}`;
-  const otherPeerId = role === 'nurse' ? `family-${id}` : `nurse-${id}`;
+
 
   const {
     localVideoRef,
@@ -19,7 +19,7 @@ export default function VisitRoom() {
     status,
     isMuted,
     isVideoOff,
-    startCall,
+
     endCall,
     toggleMic,
     toggleVideo,
@@ -36,10 +36,14 @@ export default function VisitRoom() {
     }
   }, [role, status]);
 
-  const handleEnd = useCallback(() => {
+  const handleEnd = useCallback(async () => {
     endCall();
+    // Mark the visit as completed so it doesn't show as incoming call anymore
+    if (id) {
+      try { await api.visits.complete(id); } catch (e) { console.warn(e); }
+    }
     setShowMood(true);
-  }, [endCall]);
+  }, [endCall, id]);
 
   const handleMood = async (score: number) => {
     if (id) await api.visits.logMood(id, score);
@@ -55,6 +59,8 @@ export default function VisitRoom() {
     ended: 'Call ended',
   }[status];
 
+  const roomCode = (id || '').slice(0, 8).toUpperCase();
+
   return (
     <div className="fixed inset-0 bg-gray-950 flex flex-col p-4 sm:p-6 overflow-hidden">
       {/* Header */}
@@ -69,6 +75,11 @@ export default function VisitRoom() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Room Code — same on both sides so users can verify */}
+          <div className="bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-lg">
+            <span className="text-gray-500 text-xs font-bold mr-1">Room:</span>
+            <span className="text-white font-mono text-sm font-black tracking-wider">{roomCode}</span>
+          </div>
           {status === 'connected' && (
             <div className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-black animate-pulse">LIVE</div>
           )}
