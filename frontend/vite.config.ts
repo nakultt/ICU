@@ -7,15 +7,17 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), basicSsl()],
   server: {
     port: 5173,
-    host: true, // Expose to network for multi-device testing
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        secure: false,
       },
       '/ws': {
         target: 'ws://localhost:8000',
         ws: true,
+        secure: false,
       },
     },
   },

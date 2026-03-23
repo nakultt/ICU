@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "/api";
 
 export const getUserId = () => localStorage.getItem("visicare_user_id");
 export const setUserId = (id: string) => localStorage.setItem("visicare_user_id", id);

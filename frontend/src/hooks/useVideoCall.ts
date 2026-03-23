@@ -18,14 +18,12 @@ export type CallStatus =
 interface UseVideoCallOptions {
   roomId: string;
   peerId: string;
-  /** Auto-start the call when joining (for the initiator) */
   autoStart?: boolean;
 }
 
-export function getWsBase(): string {
+function getWsBase(): string {
   const loc = window.location;
   const proto = loc.protocol === "https:" ? "wss:" : "ws:";
-  // In dev, Vite proxies /ws → backend. In prod, same origin.
   return `${proto}//${loc.host}`;
 }
 
@@ -40,24 +38,47 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const autoStartRef = useRef(autoStart);
+  autoStartRef.current = autoStart;
 
-  const send = useCallback((data: Record<string, unknown>) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ ...data, from: peerId }));
-    }
+  const sendRef = useRef<(data: Record<string, unknown>) => void>(() => {});
+
+  // Keep send function in a ref so it doesn't cause re-renders
+  useEffect(() => {
+    sendRef.current = (data: Record<string, unknown>) => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ ...data, from: peerId }));
+      }
+    };
   }, [peerId]);
 
   const getLocalStream = useCallback(async () => {
     if (localStreamRef.current) return localStreamRef.current;
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-    localStreamRef.current = stream;
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+      return stream;
+    } catch (err) {
+      console.error("[WebRTC] Camera/mic access error:", err);
+      // Try video only
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        localStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        return stream;
+      } catch {
+        console.error("[WebRTC] No camera access at all");
+        return null;
+      }
     }
-    return stream;
   }, []);
 
   const createPeerConnection = useCallback((targetPeerId: string) => {
@@ -68,7 +89,7 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        send({ type: "ice", candidate: e.candidate, target: targetPeerId });
+        sendRef.current({ type: "ice", candidate: e.candidate, target: targetPeerId });
       }
     };
 
@@ -80,110 +101,116 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     };
 
     pc.oniceconnectionstatechange = () => {
-      if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
+      const state = pc.iceConnectionState;
+      console.log("[WebRTC] ICE state:", state);
+      if (state === "disconnected" || state === "failed") {
         setStatus("ended");
       }
     };
 
     pcRef.current = pc;
     return pc;
-  }, [send]);
+  }, []);
 
-  const startCall = useCallback(async (targetPeerId: string) => {
+  const doStartCall = useCallback(async (targetPeerId: string) => {
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
     setStatus("connecting");
     setRemotePeerId(targetPeerId);
+    console.log("[WebRTC] Starting call to", targetPeerId);
 
     const stream = await getLocalStream();
     const pc = createPeerConnection(targetPeerId);
-    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    if (stream) {
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    }
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    send({ type: "offer", sdp: pc.localDescription, target: targetPeerId });
+    sendRef.current({ type: "offer", sdp: pc.localDescription, target: targetPeerId });
     setStatus("waiting");
-  }, [getLocalStream, createPeerConnection, send]);
+  }, [getLocalStream, createPeerConnection]);
 
-  const handleOffer = useCallback(async (msg: any) => {
+  const doHandleOffer = useCallback(async (msg: { from: string; sdp: RTCSessionDescriptionInit }) => {
     const fromPeer = msg.from;
     setRemotePeerId(fromPeer);
+    console.log("[WebRTC] Received offer from", fromPeer);
 
     const stream = await getLocalStream();
     const pc = createPeerConnection(fromPeer);
-    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    if (stream) {
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    }
 
     await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    send({ type: "answer", sdp: pc.localDescription, target: fromPeer });
+    sendRef.current({ type: "answer", sdp: pc.localDescription, target: fromPeer });
     setStatus("connected");
-  }, [getLocalStream, createPeerConnection, send]);
+  }, [getLocalStream, createPeerConnection]);
 
-  const handleAnswer = useCallback(async (msg: any) => {
-    if (pcRef.current) {
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-      setStatus("connected");
-    }
-  }, []);
+  // Store handlers in refs so the WebSocket effect doesn't depend on them
+  const doStartCallRef = useRef(doStartCall);
+  doStartCallRef.current = doStartCall;
+  const doHandleOfferRef = useRef(doHandleOffer);
+  doHandleOfferRef.current = doHandleOffer;
 
-  const handleIce = useCallback(async (msg: any) => {
-    if (pcRef.current && msg.candidate) {
-      try {
-        await pcRef.current.addIceCandidate(new RTCIceCandidate(msg.candidate));
-      } catch (e) {
-        console.warn("ICE candidate error:", e);
-      }
-    }
-  }, []);
-
-  // Connect to signaling server
+  // ---- Single stable WebSocket effect — only depends on roomId & peerId ----
   useEffect(() => {
     if (!roomId || !peerId) return;
 
+    let cancelled = false;
     const wsBase = getWsBase();
-    const ws = new WebSocket(`${wsBase}/ws/${roomId}/${peerId}`);
+    const wsUrl = `${wsBase}/ws/${roomId}/${peerId}`;
+    console.log("[WebRTC] Connecting to signaling:", wsUrl);
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = async () => {
+      if (cancelled) return;
       console.log(`[WebRTC] Connected to signaling as ${peerId} in room ${roomId}`);
-      // Start camera immediately so user sees their own video
-      try {
-        await getLocalStream();
-      } catch (e) {
-        console.error("[WebRTC] Camera access denied:", e);
-      }
+      // Start camera immediately
+      await getLocalStream();
       setStatus("waiting");
     };
 
     ws.onmessage = async (event) => {
+      if (cancelled) return;
       const msg = JSON.parse(event.data);
+      console.log("[WebRTC] Received message:", msg.type);
 
       switch (msg.type) {
         case "room-peers":
-          // Server tells us who's already in the room
-          if (autoStart && !hasStartedRef.current && msg.peers?.length > 0) {
-            startCall(msg.peers[0]);
+          if (autoStartRef.current && !hasStartedRef.current && msg.peers?.length > 0) {
+            doStartCallRef.current(msg.peers[0]);
           }
           break;
 
         case "peer-joined":
-          // Another peer joined — if we should auto-start, initiate the call
-          if (autoStart && !hasStartedRef.current) {
-            startCall(msg.peerId);
+          if (autoStartRef.current && !hasStartedRef.current) {
+            doStartCallRef.current(msg.peerId);
           }
           break;
 
         case "offer":
-          await handleOffer(msg);
+          await doHandleOfferRef.current(msg);
           break;
 
         case "answer":
-          await handleAnswer(msg);
+          if (pcRef.current) {
+            await pcRef.current.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+            setStatus("connected");
+          }
           break;
 
         case "ice":
-          await handleIce(msg);
+          if (pcRef.current && msg.candidate) {
+            try {
+              await pcRef.current.addIceCandidate(new RTCIceCandidate(msg.candidate));
+            } catch (e) {
+              console.warn("ICE candidate error:", e);
+            }
+          }
           break;
 
         case "peer-left":
@@ -193,18 +220,25 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     };
 
     ws.onclose = () => {
-      console.log("[WebRTC] Signaling disconnected");
+      if (!cancelled) {
+        console.log("[WebRTC] Signaling disconnected");
+      }
     };
 
     ws.onerror = (e) => {
-      console.error("[WebRTC] Signaling error:", e);
+      if (!cancelled) {
+        console.error("[WebRTC] Signaling error:", e);
+      }
     };
 
     return () => {
+      cancelled = true;
       ws.close();
       wsRef.current = null;
     };
-  }, [roomId, peerId, autoStart, getLocalStream, startCall, handleOffer, handleAnswer, handleIce]);
+    // Only reconnect when roomId or peerId changes — NOT when callbacks change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, peerId]);
 
   const endCall = useCallback(() => {
     if (pcRef.current) {
@@ -246,7 +280,7 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     isMuted,
     isVideoOff,
     remotePeerId,
-    startCall,
+    startCall: doStartCall,
     endCall,
     toggleMic,
     toggleVideo,
