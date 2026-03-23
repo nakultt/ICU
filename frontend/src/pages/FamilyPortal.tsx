@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { Link, Video, Calendar, Plus, Heart, MessageSquare, ArrowRight, Activity, Users } from 'lucide-react';
+import { Video, Calendar, Plus, Heart, MessageSquare, ArrowRight, Activity, Users } from 'lucide-react';
 
 export default function FamilyPortal() {
   const navigate = useNavigate();
@@ -171,9 +171,9 @@ export default function FamilyPortal() {
                     </div>
                   </div>
                   {v.status === 'approved' ? (
-                    <Link to={`/visit/${v.id}`} className="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-green-600 shadow-lg shadow-green-100 transition-all group active:scale-95">
+                    <button onClick={() => navigate(`/visit/${v.id}`)} className="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-green-600 shadow-lg shadow-green-100 transition-all group active:scale-95">
                       Join Call <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                    </button>
                   ) : (
                     <span className="text-xs font-black uppercase text-yellow-600 tracking-widest px-3 py-1 bg-yellow-50 rounded-full">Waiting for Approval</span>
                   )}

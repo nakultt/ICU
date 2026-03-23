@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, getUserRole } from '../api';
 import { useVideoCall } from '../hooks/useVideoCall';
@@ -29,12 +29,7 @@ export default function VisitRoom() {
     autoStart: role === 'nurse', // Nurse auto-initiates
   });
 
-  // If family joins and the nurse is already waiting, start the call
-  useEffect(() => {
-    if (role === 'family' && status === 'waiting') {
-      // Family will receive the offer from nurse — handled by hook automatically
-    }
-  }, [role, status]);
+
 
   const handleEnd = useCallback(async () => {
     endCall();

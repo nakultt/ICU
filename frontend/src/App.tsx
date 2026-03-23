@@ -3,7 +3,6 @@ import Landing from './pages/Landing';
 import NurseDashboard from './pages/NurseDashboard';
 import FamilyPortal from './pages/FamilyPortal';
 import VisitRoom from './pages/VisitRoom';
-import { getUserId } from './api';
 
 function App() {
   return (
