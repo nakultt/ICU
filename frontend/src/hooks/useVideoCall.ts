@@ -180,14 +180,21 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
       console.log("[WebRTC] Received message:", msg.type);
 
       switch (msg.type) {
-        case "room-peers":
-          if (autoStartRef.current && !hasStartedRef.current && msg.peers?.length > 0) {
-            doStartCallRef.current(msg.peers[0]);
+        case "room-peers": {
+          // Filter out our own peerId (shouldn't happen but safety check)
+          const otherPeers = (msg.peers || []).filter((p: string) => p !== peerId);
+          if (autoStartRef.current && !hasStartedRef.current && otherPeers.length > 0) {
+            console.log("[WebRTC] Found peers in room:", otherPeers, "— initiating call");
+            doStartCallRef.current(otherPeers[0]);
           }
           break;
+        }
 
         case "peer-joined":
+          // Never call yourself
+          if (msg.peerId === peerId) break;
           if (autoStartRef.current && !hasStartedRef.current) {
+            console.log("[WebRTC] Peer joined:", msg.peerId, "— initiating call");
             doStartCallRef.current(msg.peerId);
           }
           break;

@@ -22,13 +22,21 @@ async def signaling(ws: WebSocket, room_id: str, peer_id: str):
     if room_id not in rooms:
         rooms[room_id] = {}
 
-    # Collect peer IDs already in the room BEFORE adding the new peer
-    existing_peers = list(rooms[room_id].keys())
+    # If this peer_id already exists (reconnect), close the old socket
+    old_ws = rooms[room_id].get(peer_id)
+    if old_ws and old_ws != ws:
+        try:
+            await old_ws.close()
+        except Exception:
+            pass
+
+    # Collect OTHER peer IDs already in the room (exclude self)
+    existing_peers = [pid for pid in rooms[room_id] if pid != peer_id]
 
     rooms[room_id][peer_id] = ws
-    print(f"[Signaling] {peer_id} joined room {room_id} ({len(rooms[room_id])} peers)")
+    print(f"[Signaling] {peer_id} joined room {room_id} ({len(rooms[room_id])} peers, others: {existing_peers})")
 
-    # Tell the NEW peer about everyone already in the room
+    # Tell the NEW peer about OTHER peers already in the room
     if existing_peers:
         await ws.send_text(json.dumps({
             "type": "room-peers",
