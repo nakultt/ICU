@@ -214,7 +214,10 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
           break;
 
         case "peer-left":
-          setStatus("ended");
+          // Only end if we were actually connected — ignore during StrictMode reconnect cycles
+          if (pcRef.current && (pcRef.current.connectionState === "connected" || pcRef.current.iceConnectionState === "connected")) {
+            setStatus("ended");
+          }
           break;
       }
     };
