@@ -4,33 +4,37 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import ThemeToggle from '../ui/ThemeToggle';
+import { getUserRole } from '../../api';
 
 type AppShellProps = {
   children: ReactNode;
   role: 'family' | 'admin';
 };
 
-const familyLinks = [
-  { to: '/family', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/schedule', label: 'Schedule', icon: CalendarDays },
-  { to: '/notifications', label: 'Notifications', icon: Bell },
-  { to: '/patient/p-001', label: 'Patient Details', icon: UserRound },
-  { to: '/call/live-session', label: 'Video Call', icon: Video },
-  { to: '/messages', label: 'Messages', icon: MessageSquareText },
-];
-
 const adminLinks = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/schedule', label: 'Schedule', icon: CalendarDays },
-  { to: '/notifications', label: 'Notifications', icon: Bell },
-  { to: '/patient/p-001', label: 'Patient Details', icon: UserRound },
+  { to: '/admin/patients', label: 'Manage Patients', icon: UserRound },
+  { to: '/notifications', label: 'Nurse Alerts', icon: Bell },
   { to: '/call/live-session', label: 'Video Call', icon: Video },
-  { to: '/messages', label: 'Messages', icon: MessageSquareText },
 ];
 
 export default function AppShell({ children, role }: AppShellProps) {
+  const selectedFamilyPatientId = localStorage.getItem('visicare_family_patient_id');
+  const familyLinks = [
+    { to: '/family', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/schedule', label: 'Schedule Visit', icon: CalendarDays },
+    { to: '/notifications', label: 'My Notifications', icon: Bell },
+    {
+      to: selectedFamilyPatientId ? `/patient/${selectedFamilyPatientId}` : '/family',
+      label: selectedFamilyPatientId ? 'Patient Report' : 'Patient Details',
+      icon: UserRound,
+    },
+    { to: '/family', label: 'Video Call', icon: Video },
+    { to: '/messages', label: 'Family Messages', icon: MessageSquareText },
+  ];
   const links = role === 'family' ? familyLinks : adminLinks;
   const [openMenu, setOpenMenu] = useState(false);
+  const signedRole = (getUserRole() || role).toUpperCase();
 
   return (
     <div className="app-grid-bg relative min-h-screen overflow-hidden">
@@ -81,6 +85,9 @@ export default function AppShell({ children, role }: AppShellProps) {
                 {role === 'family' ? 'Family Access' : 'Hospital Command Center'}
               </p>
               <h1 className="text-xl font-black text-slate-900 dark:text-slate-100">Welcome to ICUConnect</h1>
+              <p className="mt-1 inline-flex items-center rounded-full bg-cyan-100 px-3 py-1 text-[11px] font-bold tracking-wider text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200">
+                Signed in as {signedRole}
+              </p>
             </div>
 
             <div className="relative">
@@ -104,8 +111,9 @@ export default function AppShell({ children, role }: AppShellProps) {
                   </button>
                   <button 
                     onClick={() => {
-                       localStorage.removeItem('token');
-                       localStorage.removeItem('role');
+                      localStorage.removeItem('visicare_token');
+                      localStorage.removeItem('visicare_user_role');
+                      localStorage.removeItem('visicare_family_patient_id');
                        window.location.href = '/login';
                     }}
                     className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-950/50"

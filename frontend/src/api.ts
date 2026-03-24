@@ -39,6 +39,9 @@ export const api = {
   patients: {
     list: () => request("/patients"),
     create: (data: any) => request("/patients", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request(`/patients/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    regenerateAccessCode: (id: string) => request(`/patients/${id}/access-code`, { method: "PATCH" }),
+    remove: (id: string) => request(`/patients/${id}`, { method: "DELETE" }),
     updateStatus: (id: string, status: string, note: string) => 
       request(`/patients/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, note }) }),
     link: (code: string, relationship: string) => 

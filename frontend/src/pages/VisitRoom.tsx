@@ -2,19 +2,25 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, getUserRole } from '../api';
 import { useVideoCall } from '../hooks/useVideoCall';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X } from 'lucide-react';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function VisitRoom() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [canStartCall, setCanStartCall] = useState(false);
+  const [askedPermission, setAskedPermission] = useState(false);
+  const [selectedPatientCode, setSelectedPatientCode] = useState('');
   const [showMood, setShowMood] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const role = getUserRole() || 'family';
-  const peerId = `${role}-${id}`;
+  const isNurseView = role === 'nurse' || role === 'admin';
+  const patientCode = (id || '').toUpperCase();
+  const requiresPatientSelection = isNurseView && patientCode === 'LIVE-SESSION';
+  const peerId = `${role}-${patientCode}`;
 
   const {
     localVideoRef,
@@ -28,7 +34,7 @@ export default function VisitRoom() {
     toggleMic,
     toggleVideo,
   } = useVideoCall({
-    roomId: id || '',
+    roomId: canStartCall && !requiresPatientSelection ? patientCode : '',
     peerId,
     autoStart: role === 'nurse', // Nurse auto-initiates
   });
@@ -63,7 +69,7 @@ export default function VisitRoom() {
   };
 
   const statusLabel = {
-    idle: 'Initializing...',
+    idle: canStartCall ? 'Initializing...' : 'Waiting for confirmation...',
     connecting: 'Connecting...',
     waiting: 'Waiting for other person to join...',
     incoming: 'Incoming call...',
@@ -71,19 +77,73 @@ export default function VisitRoom() {
     ended: 'Call ended',
   }[status];
 
-  const roomCode = (id || '').slice(0, 8).toUpperCase();
+  const roomCode = patientCode;
+  const handleCallPermission = (allow: boolean) => {
+    setAskedPermission(true);
+    if (allow) {
+      setCanStartCall(true);
+      return;
+    }
+    navigate(role === 'nurse' || role === 'admin' ? '/admin' : '/family');
+  };
 
   return (
     <div className="fixed inset-0 bg-slate-950 flex flex-col p-4 sm:p-6 overflow-hidden app-grid-bg">
+      {requiresPatientSelection && (
+        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-900/95 p-6 shadow-2xl">
+            <h3 className="text-xl font-black text-slate-100">Select Patient for Video Session</h3>
+            <p className="mt-2 text-sm text-slate-400">Enter the patient code to start this call.</p>
+
+            <div className="mt-4 space-y-3">
+              <input
+                type="text"
+                value={selectedPatientCode}
+                onChange={(e) => setSelectedPatientCode(e.target.value.toUpperCase())}
+                placeholder="Enter patient code"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                autoFocus
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin')}
+                  className="rounded-2xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const normalizedCode = selectedPatientCode.trim().toUpperCase();
+                    if (normalizedCode) navigate(`/call/${normalizedCode}`);
+                  }}
+                  disabled={!selectedPatientCode.trim()}
+                  className="rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+                >
+                  Start Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-24 top-16 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
+        <div className="absolute -right-28 bottom-20 h-72 w-72 rounded-full bg-teal-500/20 blur-3xl" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 z-10 px-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white ring-4 ring-indigo-900/40 shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+      <div className="flex flex-wrap items-center justify-between mb-4 z-10 px-2 gap-3">
+        <div className="flex items-center gap-3 ml-auto">
+           <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-teal-600 rounded-full flex items-center justify-center text-white ring-4 ring-cyan-900/30 shadow-[0_0_15px_rgba(8,145,178,0.45)]">
             <Heart className="w-5 h-5 heartbeat" />
           </div>
           <div>
              <h3 className="text-white font-bold leading-tight">Live Visit Session</h3>
-             <p className="text-indigo-400 text-xs tracking-widest uppercase font-black">WebRTC • Peer-to-Peer</p>
+             <p className="text-cyan-400 text-xs tracking-widest uppercase font-black">WebRTC • Peer-to-Peer</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -97,17 +157,47 @@ export default function VisitRoom() {
             </div>
           )}
           {statusLabel && (
-            <div className="text-slate-400 text-sm font-medium">{statusLabel}</div>
+            <div className="hidden sm:block text-slate-400 text-sm font-medium">{statusLabel}</div>
           )}
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 relative flex gap-4">
+      <div className="flex-1 min-h-0 relative flex items-center justify-center">
+        {!canStartCall && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/95 p-6 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-100">Start Video Call?</h3>
+              <p className="mt-2 text-sm text-slate-400">
+                {askedPermission ? 'Please choose whether you want to start this call.' : 'Do you want to start the secure patient video call now?'}
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleCallPermission(false)}
+                  className="rounded-2xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200"
+                >
+                  Not now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCallPermission(true)}
+                  className="rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-3 text-sm font-bold text-white"
+                >
+                  Start Call
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Video Container */}
-        <div className={`flex-1 relative transition-all duration-300 ${showChat ? 'mr-0 lg:mr-[340px]' : ''}`}>
+        <div className={`relative w-full h-full flex items-center justify-center transition-[margin] duration-300 ${showChat ? 'lg:mr-[22rem]' : ''}`}>
           {/* Remote video (large) */}
-          <div className="w-full h-full glass-card !bg-slate-900/80 rounded-[2.5rem] shadow-2xl overflow-hidden relative border-slate-700/50">
+          <div className={`w-full ${isNurseView ? 'max-w-[min(88vw,1080px)]' : 'max-w-[min(96vw,1400px)]'} aspect-video max-h-full glass-card !bg-slate-900/80 rounded-4xl shadow-2xl overflow-hidden relative border-slate-700/50`}>
+            <div className="pointer-events-none absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-slate-900/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-200 backdrop-blur-md">
+              <ShieldCheck className="h-3.5 w-3.5" /> Secure Patient Session
+            </div>
             <video
               ref={remoteVideoRef}
               autoPlay
@@ -124,9 +214,9 @@ export default function VisitRoom() {
                     {status === 'waiting' ? 'Waiting for the other person...' : 'Connecting securely...'}
                   </p>
                   <div className="flex justify-center gap-2">
-                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2.5 h-2.5 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="w-2.5 h-2.5 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </div>
@@ -138,7 +228,7 @@ export default function VisitRoom() {
             drag
             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.1}
-            className="absolute bottom-6 right-6 w-36 h-48 sm:w-48 sm:h-64 bg-slate-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/50 ring-2 ring-white/10 z-20 cursor-move"
+            className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 ${isNurseView ? 'w-32 h-20 sm:w-40 sm:h-24 md:w-48 md:h-28 lg:w-52 lg:h-32' : 'w-36 h-24 sm:w-48 sm:h-32 md:w-56 md:h-36 lg:w-64 lg:h-40'} bg-slate-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/50 ring-2 ring-white/10 z-20 cursor-move`}
           >
             <video
               ref={localVideoRef}
@@ -161,7 +251,7 @@ export default function VisitRoom() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-full max-w-xs lg:w-[340px] z-30 flex flex-col glass-card !bg-slate-900/90 rounded-[2.5rem] border-slate-700/50 shadow-2xl overflow-hidden"
+              className="absolute right-0 top-0 bottom-0 w-full sm:max-w-sm lg:w-[22rem] z-30 flex flex-col glass-card !bg-slate-900/90 rounded-4xl border-slate-700/50 shadow-2xl overflow-hidden"
             >
               <div className="p-5 border-b border-slate-700/50 flex items-center justify-between bg-white/5">
                 <div className="flex items-center gap-3 relative">
@@ -195,11 +285,11 @@ export default function VisitRoom() {
                         </div>
                         <div className={`px-4 py-2.5 shadow-md flex flex-col gap-1 max-w-[85%] ${
                           isMe 
-                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-t-2xl rounded-l-2xl rounded-br-sm' 
+                            ? 'bg-gradient-to-br from-cyan-600 to-teal-600 text-white rounded-t-2xl rounded-l-2xl rounded-br-sm' 
                             : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-t-2xl rounded-r-2xl rounded-bl-sm'
                         }`}>
                           <p className="text-sm leading-relaxed whitespace-pre-wrap word-break">{msg.text}</p>
-                          <span className={`text-[9px] ${isMe ? 'text-indigo-200' : 'text-slate-500'} self-end mt-1`}>
+                          <span className={`text-[9px] ${isMe ? 'text-cyan-100' : 'text-slate-500'} self-end mt-1`}>
                             {new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -217,12 +307,12 @@ export default function VisitRoom() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a message..."
-                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-5 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-5 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
                   />
                   <button 
                     type="submit" 
                     disabled={!chatInput.trim()}
-                    className="absolute right-1.5 top-1.5 bottom-1.5 aspect-square bg-gradient-to-tr from-indigo-500 to-purple-500 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                    className="absolute right-1.5 top-1.5 bottom-1.5 aspect-square bg-gradient-to-tr from-cyan-600 to-teal-600 text-white rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                   >
                     <Send className="w-4 h-4 ml-0.5" />
                   </button>
@@ -234,7 +324,7 @@ export default function VisitRoom() {
       </div>
 
       {/* Controls Bar */}
-      <div className="pt-6 pb-2 flex justify-center items-center gap-3 sm:gap-6 z-10 w-full max-w-md mx-auto relative mt-auto">
+      <div className={`pt-6 pb-2 flex justify-center items-center gap-3 sm:gap-6 z-10 w-full ${isNurseView ? 'max-w-lg' : 'max-w-xl'} mx-auto relative mt-auto`}>
         <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xl border border-white/5 shadow-2xl rounded-full pointer-events-none -m-2" />
         <button 
           onClick={toggleMic}
@@ -250,7 +340,7 @@ export default function VisitRoom() {
         </button>
         <button 
           onClick={() => setShowChat(prev => !prev)}
-          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${showChat ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${showChat ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30 ring-2 ring-cyan-400' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'}`}
         >
           <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7" />
           {messages.length > 0 && !showChat && (
@@ -280,7 +370,7 @@ export default function VisitRoom() {
               transition={{ type: 'spring', bounce: 0.4 }}
               className="glass-card w-full max-w-md rounded-[3rem] p-10 text-center space-y-8 shadow-2xl relative overflow-hidden"
             >
-              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500" />
+              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-cyan-500 via-sky-500 to-teal-500" />
               
               <div className="space-y-3">
                 <h2 className="text-3xl font-black text-slate-100">How do you feel?</h2>
@@ -294,10 +384,10 @@ export default function VisitRoom() {
                     onClick={() => handleMood(score)}
                     className="group flex flex-col items-center gap-3 outline-none"
                   >
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-125 group-hover:-translate-y-2 group-hover:bg-indigo-500/20 group-hover:shadow-[0_10px_25px_rgba(99,102,241,0.3)] transition-all duration-300 group-active:scale-95 border border-white/5">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-125 group-hover:-translate-y-2 group-hover:bg-cyan-500/20 group-hover:shadow-[0_10px_25px_rgba(8,145,178,0.3)] transition-all duration-300 group-active:scale-95 border border-white/5">
                       {['😢', '😟', '😐', '😊', '🥰'][score-1]}
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-400 transition-colors">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-cyan-400 transition-colors">
                       {['Poor', 'Fair', 'Good', 'Great', 'Awesome'][score-1]}
                     </span>
                   </button>

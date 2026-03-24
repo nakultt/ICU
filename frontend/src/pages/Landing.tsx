@@ -7,24 +7,33 @@ const features = [
     title: 'Secure Communication',
     text: 'Hospital-grade encrypted video channels for ICU family sessions.',
     icon: LockKeyhole,
+    tone: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-200',
   },
   {
     title: 'Fast Response Workflow',
     text: 'Instant escalation and real-time approvals with live nurse oversight.',
     icon: Zap,
+    tone: 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-200',
   },
   {
     title: 'Fully Controlled Access',
     text: 'Staff-managed permissions for every room, schedule, and remote connection.',
     icon: ShieldCheck,
+    tone: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200',
   },
 ];
 
 export default function Landing() {
   return (
     <div className="app-grid-bg relative min-h-screen overflow-hidden px-4 py-6 md:px-8">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="soft-float absolute -left-24 top-20 h-72 w-72 rounded-full bg-cyan-300/30 blur-3xl" />
+        <div className="soft-float absolute right-4 top-10 h-64 w-64 rounded-full bg-teal-300/25 blur-3xl" style={{ animationDelay: '1.2s' }} />
+        <div className="soft-float absolute bottom-12 left-1/3 h-60 w-60 rounded-full bg-amber-200/25 blur-3xl" style={{ animationDelay: '2.3s' }} />
+      </div>
+
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="glass-card rounded-[2rem] p-8 md:p-12">
+        <div className="glass-card scan-glow rounded-[2rem] p-8 md:p-12">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <motion.p
@@ -63,7 +72,7 @@ export default function Landing() {
               >
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-cyan-300/40 transition hover:scale-[1.02]"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 via-sky-600 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-cyan-300/45 transition hover:scale-[1.03]"
                 >
                   Login
                   <ArrowRight size={16} />
@@ -86,9 +95,9 @@ export default function Landing() {
                       initial={{ opacity: 0, y: 18 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.35 + idx * 0.1 }}
-                      className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/70"
+                        className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/70"
                     >
-                      <div className="mb-2 inline-flex rounded-xl bg-cyan-100 p-2 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-200">
+                        <div className={`mb-2 inline-flex rounded-xl p-2 ${feature.tone}`}>
                         <Icon size={16} />
                       </div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{feature.title}</h3>
@@ -107,6 +116,7 @@ export default function Landing() {
             >
               <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan-300/40 blur-3xl" />
               <div className="absolute -bottom-12 -left-10 h-48 w-48 rounded-full bg-teal-300/35 blur-3xl" />
+              <div className="absolute bottom-16 right-8 h-36 w-36 rounded-full bg-amber-200/30 blur-3xl" />
               <div className="relative overflow-hidden rounded-[2rem] border border-white/50 bg-gradient-to-br from-cyan-100/90 via-white to-sky-100 p-6 shadow-2xl dark:border-slate-700 dark:from-cyan-900/40 dark:via-slate-900 dark:to-slate-800">
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-100">Live ICU Session Queue</p>

@@ -2,6 +2,11 @@
 
 :root {
 	color-scheme: light;
+	--bg-cyan: #a5f3fc;
+	--bg-teal: #5eead4;
+	--bg-sky: #bae6fd;
+	--bg-amber: #fde68a;
+	--bg-rose: #fecdd3;
 }
 
 html.dark {
@@ -11,13 +16,25 @@ html.dark {
 body {
 	margin: 0;
 	font-family: "Segoe UI", "Inter", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-	background: radial-gradient(circle at top right, #e0f2fe 0%, #f8fafc 45%, #eef2ff 100%);
+	background:
+		radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--bg-cyan) 65%, white) 0%, transparent 38%),
+		radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--bg-teal) 52%, white) 0%, transparent 42%),
+		radial-gradient(circle at 82% 86%, color-mix(in srgb, var(--bg-sky) 64%, white) 0%, transparent 40%),
+		radial-gradient(circle at 18% 82%, color-mix(in srgb, var(--bg-amber) 50%, white) 0%, transparent 44%),
+		linear-gradient(145deg, #f8fcff 0%, #f3f9ff 42%, #f8fafc 100%);
 	color: #0f172a;
+	background-attachment: fixed;
 }
 
 html.dark body {
-	background: radial-gradient(circle at top right, #0f172a 0%, #020617 65%, #0b1220 100%);
+	background:
+		radial-gradient(circle at 12% 14%, rgba(6, 182, 212, 0.22) 0%, transparent 34%),
+		radial-gradient(circle at 90% 10%, rgba(20, 184, 166, 0.2) 0%, transparent 34%),
+		radial-gradient(circle at 85% 86%, rgba(14, 165, 233, 0.2) 0%, transparent 36%),
+		radial-gradient(circle at 20% 88%, rgba(245, 158, 11, 0.12) 0%, transparent 38%),
+		linear-gradient(155deg, #020617 0%, #0a1323 52%, #020617 100%);
 	color: #e2e8f0;
+	background-attachment: fixed;
 }
 
 #root {
@@ -33,10 +50,21 @@ html.dark body {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
-	background-image: linear-gradient(rgba(8, 145, 178, 0.08) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(8, 145, 178, 0.08) 1px, transparent 1px);
-	background-size: 34px 34px;
-	mask-image: radial-gradient(circle at center, black 50%, transparent 92%);
+	background: transparent;
+}
+
+.app-grid-bg::after {
+	content: "";
+	position: absolute;
+	inset: -20% -10%;
+	pointer-events: none;
+	background:
+		radial-gradient(circle at 22% 28%, rgba(6, 182, 212, 0.16) 0%, transparent 30%),
+		radial-gradient(circle at 76% 26%, rgba(20, 184, 166, 0.14) 0%, transparent 32%),
+		radial-gradient(circle at 58% 72%, rgba(14, 165, 233, 0.14) 0%, transparent 34%),
+		radial-gradient(circle at 28% 78%, rgba(245, 158, 11, 0.09) 0%, transparent 30%);
+	filter: blur(28px);
+	animation: aurora-shift 14s ease-in-out infinite alternate;
 }
 
 .glass-card {
@@ -44,12 +72,44 @@ html.dark body {
 	backdrop-filter: blur(14px);
 	border: 1px solid rgba(148, 163, 184, 0.22);
 	box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+	transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
 }
 
 html.dark .glass-card {
 	background: rgba(15, 23, 42, 0.72);
 	border: 1px solid rgba(100, 116, 139, 0.35);
 	box-shadow: 0 18px 45px rgba(2, 6, 23, 0.45);
+}
+
+@media (hover: hover) {
+	.glass-card:hover {
+		transform: translateY(-2px);
+		border-color: rgba(14, 165, 233, 0.35);
+		box-shadow: 0 20px 55px rgba(8, 145, 178, 0.16);
+	}
+
+	html.dark .glass-card:hover {
+		border-color: rgba(34, 211, 238, 0.35);
+		box-shadow: 0 22px 60px rgba(8, 145, 178, 0.24);
+	}
+}
+
+/* Raise default text contrast in dark mode across dashboard cards and overlays. */
+html.dark .glass-card .text-slate-500,
+html.dark .glass-card .text-slate-600,
+html.dark .glass-card .text-gray-500,
+html.dark .glass-card .text-gray-600 {
+	color: rgb(203 213 225);
+}
+
+html.dark .glass-card .text-slate-700,
+html.dark .glass-card .text-gray-700 {
+	color: rgb(226 232 240);
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+	color: rgb(148 163 184);
 }
 
 .heartbeat {
@@ -106,6 +166,66 @@ html.dark .glass-card {
 	}
 	to {
 		transform: scale(1.45);
+		opacity: 0;
+	}
+}
+
+.soft-float {
+	animation: soft-float 4.8s ease-in-out infinite;
+}
+
+.scan-glow {
+	position: relative;
+	overflow: hidden;
+}
+
+.scan-glow::after {
+	content: "";
+	position: absolute;
+	top: -110%;
+	left: -30%;
+	width: 160%;
+	height: 220%;
+	background: linear-gradient(180deg, transparent 0%, rgba(34, 211, 238, 0.15) 45%, transparent 100%);
+	animation: scan-pass 3.8s ease-in-out infinite;
+	pointer-events: none;
+}
+
+@keyframes soft-float {
+	0%,
+	100% {
+		transform: translateY(0px);
+	}
+	50% {
+		transform: translateY(-8px);
+	}
+}
+
+@keyframes aurora-shift {
+	0% {
+		transform: translate3d(-2%, -1%, 0) scale(1);
+	}
+	50% {
+		transform: translate3d(2%, 1%, 0) scale(1.03);
+	}
+	100% {
+		transform: translate3d(-1%, 2%, 0) scale(1.01);
+	}
+}
+
+@keyframes scan-pass {
+	0% {
+		transform: translateY(-38%);
+		opacity: 0;
+	}
+	20% {
+		opacity: 1;
+	}
+	60% {
+		opacity: 0.65;
+	}
+	100% {
+		transform: translateY(58%);
 		opacity: 0;
 	}
 }

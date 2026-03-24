@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { CircleAlert, CircleCheckBig, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, setToken, setUserRole } from '../api';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const expectedRole = searchParams.get('role');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
@@ -13,6 +15,7 @@ export default function Login() {
 
   const submitLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     setState('loading');
     setErrorMsg('');
     try {
@@ -24,6 +27,15 @@ export default function Login() {
       
       setToken(data.access_token);
       setUserRole(data.role);
+
+      if (expectedRole && data.role !== expectedRole) {
+        localStorage.removeItem('visicare_token');
+        localStorage.removeItem('visicare_user_role');
+        setState('error');
+        setErrorMsg(`This account is not a ${expectedRole} account.`);
+        return;
+      }
+
       setState('success');
       
       setTimeout(() => {
@@ -43,16 +55,16 @@ export default function Login() {
   return (
     <div className="app-grid-bg relative min-h-screen px-4 py-10 md:px-8 flex items-center justify-center">
       <div className="relative z-10 w-full max-w-lg">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-white/10 relative overflow-hidden">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-white/20 relative overflow-hidden">
           
-          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-500 via-sky-500 to-teal-500" />
           
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-5 inline-flex rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 text-indigo-400 ring-1 ring-white/10 shadow-[0_0_30px_rgba(99,102,241,0.15)]">
+            <div className="mx-auto mb-5 inline-flex rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 p-4 text-cyan-700 ring-1 ring-cyan-200/70 shadow-[0_0_30px_rgba(8,145,178,0.15)] dark:text-cyan-300 dark:ring-cyan-900/40">
               <ShieldCheck size={28} />
             </div>
-            <h1 className="text-3xl font-black text-slate-100 placeholder-slate-400">Welcome Back</h1>
-            <p className="mt-2 text-sm text-slate-400">
+            <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100">Welcome Back</h1>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               Sign in to securely access VisiCare
             </p>
           </div>
@@ -64,7 +76,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email Address"
-              className="w-full rounded-2xl border border-slate-700/50 bg-slate-900/50 px-5 py-4 text-sm text-slate-100 outline-none transition focus:border-indigo-500 focus:bg-slate-900 focus:ring-4 focus:ring-indigo-500/10 placeholder-slate-500"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 placeholder-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-100"
             />
             <input
               required
@@ -72,13 +84,13 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full rounded-2xl border border-slate-700/50 bg-slate-900/50 px-5 py-4 text-sm text-slate-100 outline-none transition focus:border-indigo-500 focus:bg-slate-900 focus:ring-4 focus:ring-indigo-500/10 placeholder-slate-500"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 placeholder-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-100"
             />
 
             <button
               type="submit"
               disabled={state === 'loading' || state === 'success'}
-              className="mt-6 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-4 text-sm font-black text-white shadow-xl shadow-indigo-900/40 transition-all hover:scale-[1.02] hover:shadow-indigo-900/60 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center"
+              className="mt-6 w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-5 py-4 text-sm font-black text-white shadow-xl shadow-cyan-900/30 transition-all hover:scale-[1.02] hover:shadow-cyan-900/50 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center"
             >
               {state === 'loading' ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -98,10 +110,10 @@ export default function Login() {
             </motion.div>
           )}
 
-          <div className="mt-8 text-center border-t border-slate-700/50 pt-6 flex flex-col gap-2">
-            <p className="text-sm text-slate-400">
+          <div className="mt-8 text-center border-t border-slate-200 pt-6 flex flex-col gap-2 dark:border-slate-700/50">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Don't have an account?{' '}
-              <Link to="/register" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
+              <Link to="/register" className="font-bold text-cyan-700 hover:text-cyan-600 transition-colors dark:text-cyan-400 dark:hover:text-cyan-300">
                 Register here
               </Link>
             </p>

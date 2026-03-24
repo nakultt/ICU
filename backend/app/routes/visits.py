@@ -24,12 +24,13 @@ class VisitResponse(BaseModel):
     scheduled_time: str
     status: str
     room_url: Optional[str]
+    shared_access_code: Optional[str]
 
 def _visit_to_resp(v: dict) -> VisitResponse:
     return VisitResponse(
         id=v["_id"], patient_id=str(v["patient_id"]), family_user_id=str(v["family_user_id"]),
         scheduled_date=v["scheduled_date"], scheduled_time=v["scheduled_time"],
-        status=v["status"], room_url=v.get("room_url", "")
+        status=v["status"], room_url=v.get("room_url", ""), shared_access_code=v.get("shared_access_code", "")
     )
 
 @router.post("", response_model=VisitResponse)
@@ -44,6 +45,7 @@ async def create_visit(req: VisitCreate, db: AsyncIOMotorDatabase = Depends(get_
         "status": "pending",
         "decline_reason": "",
         "approved_by": None,
+        "shared_access_code": "",
         "room_name": "",
         "room_url": "",
         "created_at": datetime.utcnow()
@@ -84,6 +86,7 @@ async def approve_visit(visit_id: str, db: AsyncIOMotorDatabase = Depends(get_db
     visit = await db.visits.find_one({"_id": visit_id})
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+    patient = await db.patients.find_one({"_id": visit["patient_id"]})
     
     room_url = f"https://visicare.daily.co/demo-{visit_id[:8]}" # Default mock
     
@@ -115,10 +118,11 @@ async def approve_visit(visit_id: str, db: AsyncIOMotorDatabase = Depends(get_db
         {"$set": {
             "status": "approved",
             "room_url": room_url,
-            "approved_by": user.id
+            "approved_by": user.id,
+            "shared_access_code": (patient or {}).get("access_code", "")
         }}
     )
-    return {"status": "approved", "room_url": room_url}
+    return {"status": "approved", "room_url": room_url, "shared_access_code": (patient or {}).get("access_code", "")}
 
 @router.post("/instant", response_model=VisitResponse)
 async def create_instant_visit(patient_id: str = Body(..., embed=True), db: AsyncIOMotorDatabase = Depends(get_db), user: User = Depends(get_current_user)):
@@ -139,6 +143,7 @@ async def create_instant_visit(patient_id: str = Body(..., embed=True), db: Asyn
         "scheduled_time": datetime.utcnow().strftime("%H:%M"),
         "status": "approved",
         "room_url": "",
+        "shared_access_code": "",
         "duration_minutes": 15,
         "decline_reason": "",
         "approved_by": user.id,

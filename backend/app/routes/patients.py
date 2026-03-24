@@ -44,8 +44,25 @@ class LinkPatientRequest(BaseModel):
     relationship: str
     is_next_of_kin: bool = False
 
+class PatientUpdate(BaseModel):
+    full_name: Optional[str] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    bed_number: Optional[str] = None
+    ward: Optional[str] = None
+    diagnosis: Optional[str] = None
+    is_conscious: Optional[bool] = None
+
 def _gen_access_code():
     return "".join(random.choices(string.digits, k=6))
+
+async def _gen_unique_access_code(db: AsyncIOMotorDatabase) -> str:
+    for _ in range(20):
+        code = _gen_access_code()
+        existing = await db.patients.find_one({"access_code": code, "is_active": True})
+        if not existing:
+            return code
+    raise HTTPException(status_code=500, detail="Unable to generate unique access code")
 
 def _patient_to_resp(p: dict) -> PatientResponse:
     adm_dt = p.get("admission_date")
@@ -71,6 +88,7 @@ async def create_patient(
     db: AsyncIOMotorDatabase = Depends(get_db),
     user: User = Depends(require_role("nurse", "admin")),
 ):
+    access_code = await _gen_unique_access_code(db)
     patient_data = {
         "_id": generate_uuid(),
         "full_name": req.full_name,
@@ -80,7 +98,7 @@ async def create_patient(
         "ward": req.ward,
         "diagnosis": req.diagnosis,
         "is_conscious": req.is_conscious,
-        "access_code": _gen_access_code(),
+        "access_code": access_code,
         "current_status": "STABLE",
         "status_note": "Condition stable",
         "admission_date": datetime.utcnow(),
@@ -90,6 +108,27 @@ async def create_patient(
     }
     await db.patients.insert_one(patient_data)
     return _patient_to_resp(patient_data)
+
+@router.patch("/{patient_id}/access-code", response_model=PatientResponse)
+async def regenerate_access_code(
+    patient_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user: User = Depends(require_role("nurse", "admin")),
+):
+    patient = await db.patients.find_one({"_id": patient_id, "is_active": True})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    new_code = await _gen_unique_access_code(db)
+    await db.patients.update_one(
+        {"_id": patient_id, "is_active": True},
+        {"$set": {"access_code": new_code, "status_updated_at": datetime.utcnow()}}
+    )
+
+    updated = await db.patients.find_one({"_id": patient_id, "is_active": True})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return _patient_to_resp(updated)
 
 @router.get("", response_model=List[PatientResponse])
 async def list_patients(
@@ -135,15 +174,62 @@ async def update_status(
         raise HTTPException(status_code=404, detail="Patient not found")
     return {"status": "updated"}
 
+@router.patch("/{patient_id}", response_model=PatientResponse)
+async def update_patient(
+    patient_id: str,
+    req: PatientUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user: User = Depends(require_role("nurse", "admin")),
+):
+    updates = {k: v for k, v in req.model_dump(exclude_unset=True).items()}
+    if not updates:
+        patient = await db.patients.find_one({"_id": patient_id, "is_active": True})
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        return _patient_to_resp(patient)
+
+    updates["status_updated_at"] = datetime.utcnow()
+    result = await db.patients.update_one(
+        {"_id": patient_id, "is_active": True},
+        {"$set": updates}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    patient = await db.patients.find_one({"_id": patient_id, "is_active": True})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return _patient_to_resp(patient)
+
+@router.delete("/{patient_id}")
+async def remove_patient(
+    patient_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user: User = Depends(require_role("nurse", "admin")),
+):
+    result = await db.patients.update_one(
+        {"_id": patient_id, "is_active": True},
+        {"$set": {"is_active": False, "status_updated_at": datetime.utcnow()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return {"status": "removed"}
+
 @router.post("/link")
 async def link_patient(
     req: LinkPatientRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    patient = await db.patients.find_one({"access_code": req.access_code})
+    identifier = req.access_code.strip()
+    patient = await db.patients.find_one({
+        "$or": [
+            {"access_code": identifier},
+            {"_id": identifier}
+        ]
+    })
     if not patient:
-        raise HTTPException(status_code=404, detail="Invalid access code")
+        raise HTTPException(status_code=404, detail="Invalid patient ID or access code")
 
     existing = await db.family_links.find_one({"user_id": user.id, "patient_id": patient["_id"]})
     if existing:

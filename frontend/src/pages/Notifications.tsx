@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { BellRing, CircleCheckBig, HeartPulse, Video } from 'lucide-react';
 import AppShell from '../components/layout/AppShell';
+import { getUserRole } from '../api';
 
 const updates = [
   { id: 1, title: 'Call approved', detail: 'Your 08:30 visit request has been approved.', time: '2 min ago', icon: CircleCheckBig },
@@ -9,8 +10,11 @@ const updates = [
 ];
 
 export default function NotificationsPage() {
+  const role = getUserRole();
+  const shellRole = role === 'nurse' || role === 'admin' ? 'admin' : 'family';
+
   return (
-    <AppShell role="family">
+    <AppShell role={shellRole}>
       <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-3xl p-6">
         <h2 className="inline-flex items-center gap-2 text-xl font-black text-slate-900 dark:text-slate-100">
           <BellRing size={18} /> Real-time Notifications
