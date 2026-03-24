@@ -22,6 +22,12 @@ interface UseVideoCallOptions {
 }
 
 function getWsBase(): string {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  if (import.meta.env.PROD) {
+    return "wss://icu-r1j0.onrender.com";
+  }
   const loc = window.location;
   const proto = loc.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${loc.host}`;
