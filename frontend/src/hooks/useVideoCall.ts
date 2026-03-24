@@ -227,9 +227,15 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
           }
           break;
 
-        case "chat":
-          setMessages((prev) => [...prev, { id: msg.id || Math.random().toString(36).slice(2, 9), from: msg.from, text: msg.text, time: msg.time }]);
+        case "chat": {
+          const id = msg.id || Math.random().toString(36).slice(2, 9);
+          setMessages((prev) => [...prev, { id, from: msg.from, text: msg.text, time: msg.time }]);
+          if (isTTSEnabledRef.current && msg.from !== peerId) {
+            const utterance = new SpeechSynthesisUtterance(msg.text);
+            window.speechSynthesis.speak(utterance);
+          }
           break;
+        }
       }
     };
 
@@ -288,12 +294,31 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
   }, []);
 
   const [messages, setMessages] = useState<{ id: string; from: string; text: string; time: string }[]>([]);
+  const [isTTSEnabled, setIsTTSEnabled] = useState(false);
+  const isTTSEnabledRef = useRef(isTTSEnabled);
+
+  const toggleTTS = useCallback(() => {
+    setIsTTSEnabled((prev) => {
+      const next = !prev;
+      isTTSEnabledRef.current = next;
+      // If turning off, cancel any ongoing speech
+      if (!next) {
+        window.speechSynthesis.cancel();
+      }
+      return next;
+    });
+  }, []);
 
   const sendMessage = useCallback((text: string) => {
     const time = new Date().toISOString();
     const id = Math.random().toString(36).slice(2, 9);
     sendRef.current({ type: "chat", text, time, id });
     setMessages((prev) => [...prev, { id, from: peerId, text, time }]);
+
+    if (isTTSEnabledRef.current) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
   }, [peerId]);
 
   return {
@@ -305,6 +330,8 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     remotePeerId,
     messages,
     sendMessage,
+    isTTSEnabled,
+    toggleTTS,
     startCall: doStartCall,
     endCall,
     toggleMic,

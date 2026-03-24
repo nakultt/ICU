@@ -2,8 +2,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, getUserRole } from '../api';
 import { useVideoCall } from '../hooks/useVideoCall';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X } from 'lucide-react';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X, Volume2, VolumeX, AudioLines } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSpeechToText } from '../hooks/useSpeechToText';
 
 export default function VisitRoom() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,8 @@ export default function VisitRoom() {
     isVideoOff,
     messages,
     sendMessage,
+    isTTSEnabled,
+    toggleTTS,
     endCall,
     toggleMic,
     toggleVideo,
@@ -32,6 +35,15 @@ export default function VisitRoom() {
     peerId,
     autoStart: role === 'nurse', // Nurse auto-initiates
   });
+
+  const handleTranscript = useCallback((text: string) => {
+    setChatInput((prev) => {
+       const space = prev && !prev.endsWith(' ') ? ' ' : '';
+       return prev + space + text;
+    });
+  }, []);
+
+  const { isListening, toggleListening } = useSpeechToText(handleTranscript);
 
   // Auto-scroll chat when messages update
   useEffect(() => {
@@ -170,9 +182,18 @@ export default function VisitRoom() {
                   </div>
                   <h3 className="font-bold text-slate-100">Live Chat</h3>
                 </div>
-                <button onClick={() => setShowChat(false)} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={toggleTTS} 
+                    title={isTTSEnabled ? "Disable Read-Aloud" : "Enable Read-Aloud"}
+                    className={`p-2 rounded-full transition-colors ${isTTSEnabled ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                  >
+                    {isTTSEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  </button>
+                  <button onClick={() => setShowChat(false)} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
@@ -212,12 +233,20 @@ export default function VisitRoom() {
 
               <div className="p-4 border-t border-slate-700/50 bg-slate-900/50">
                 <form onSubmit={handleSendChat} className="flex gap-2 relative">
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    title="Voice Typing"
+                    className={`absolute left-1.5 top-1.5 bottom-1.5 aspect-square rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-rose-500/20 text-rose-500 animate-pulse' : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'}`}
+                  >
+                    <AudioLines className="w-4 h-4" />
+                  </button>
                   <input
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-5 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                    placeholder={isListening ? "Listening..." : "Type a message..."}
+                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
                   />
                   <button 
                     type="submit" 
