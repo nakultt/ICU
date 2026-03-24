@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "https://icu-r1j0.onrender.com/api" : "/api");
 
 export const getToken = () => localStorage.getItem("visicare_token");
 export const setToken = (token: string) => localStorage.setItem("visicare_token", token);

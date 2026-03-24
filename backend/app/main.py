@@ -8,7 +8,12 @@ app = FastAPI(title="VisiCare API")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For local dev hackathon
+    allow_origins=[
+        "http://localhost:5173",           # Local Vite dev server
+        "https://icu-snowy.vercel.app",    # Vercel Production
+        # To allow Vercel preview domains broadly, we can also use allow_origin_regex
+        # But for now, we just list your main domains
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
