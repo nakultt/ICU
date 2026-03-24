@@ -226,6 +226,10 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
             setStatus("ended");
           }
           break;
+
+        case "chat":
+          setMessages((prev) => [...prev, { id: msg.id || Math.random().toString(36).slice(2, 9), from: msg.from, text: msg.text, time: msg.time }]);
+          break;
       }
     };
 
@@ -283,6 +287,15 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     }
   }, []);
 
+  const [messages, setMessages] = useState<{ id: string; from: string; text: string; time: string }[]>([]);
+
+  const sendMessage = useCallback((text: string) => {
+    const time = new Date().toISOString();
+    const id = Math.random().toString(36).slice(2, 9);
+    sendRef.current({ type: "chat", text, time, id });
+    setMessages((prev) => [...prev, { id, from: peerId, text, time }]);
+  }, [peerId]);
+
   return {
     localVideoRef,
     remoteVideoRef,
@@ -290,6 +303,8 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     isMuted,
     isVideoOff,
     remotePeerId,
+    messages,
+    sendMessage,
     startCall: doStartCall,
     endCall,
     toggleMic,

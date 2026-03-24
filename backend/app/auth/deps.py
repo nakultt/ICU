@@ -1,43 +1,43 @@
-from fastapi import Depends, HTTPException, Header
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import ValidationError
 from ..database import get_db
 from ..models import User
+from ..config import settings
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 async def get_current_user(
-    x_user_id: str = Header(None, alias="X-User-ID"),
-    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> User:
-    if not x_user_id:
-        # For simplicity, if no ID, we return a mock admin/nurse or return 401
-        # In a real simple app, we might just use a hardcoded dev user
-        result = await db.execute(select(User).limit(1))
-        user = result.scalar_one_or_none()
-        if not user:
-             # Create a default admin/nurse if none exists
-             user = User(id="dev-nurse", full_name="Nurse Priya", role="nurse", email="priya@visicare.health")
-             db.add(user)
-             await db.commit()
-             await db.refresh(user)
-        return user
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except (JWTError, ValidationError):
+        raise credentials_exception
 
-    result = await db.execute(select(User).where(User.id == x_user_id))
-    user = result.scalar_one_or_none()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-def require_role(*roles):
-    async def role_checker(user: User = Depends(get_current_user)):
-        if user.role not in roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-        return user
-    return role_checker
-
+    user_dict = await db.users.find_one({"_id": user_id})
+    if user_dict is None:
+        raise credentials_exception
+    
+    return User(**user_dict)
 
 def require_role(*roles):
     async def role_checker(user: User = Depends(get_current_user)):
         if user.role not in roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Insufficient permissions"
+            )
         return user
     return role_checker

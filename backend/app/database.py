@@ -1,20 +1,26 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import DeclarativeBase
+from motor.motor_asyncio import AsyncIOMotorClient
 from .config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
-async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-async def get_db():
-    async with async_session() as session:
-        yield session
-
+client = None
+db = None
 
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    global client, db
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    db = client.get_database() # Uses db name from URI, e.g., 'visicare'
+    
+    # Create unique indexes
+    await db.users.create_index("email", unique=True)
+    await db.patients.create_index("access_code", unique=True)
+
+async def close_db():
+    global client
+    if client:
+        client.close()
+
+async def get_db():
+    global db
+    if db is None:
+        client = AsyncIOMotorClient(settings.MONGODB_URL)
+        db = client.get_database()
+    yield db

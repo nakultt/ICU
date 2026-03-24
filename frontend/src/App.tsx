@@ -1,16 +1,32 @@
+import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ThemeProvider } from './hooks/useTheme';
+import { getToken, getUserRole } from './api';
+
 import FamilyDashboard from './pages/FamilyDashboard';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import NotificationsPage from './pages/Notifications';
 import NurseDashboard from './pages/NurseDashboard';
 import PatientDetails from './pages/PatientDetails';
 import RoleSelection from './pages/RoleSelection';
 import ScheduleVisit from './pages/ScheduleVisit';
-import VideoCall from './pages/VideoCall';
+import VisitRoom from './pages/VisitRoom';
+import MessagesPage from './pages/Messages';
+
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
+  const token = getToken();
+  const role = getUserRole();
+
+  if (!token) return <Navigate to="/login" replace />;
+  if (allowedRoles && role && !allowedRoles.includes(role)) {
+    return <Navigate to={role === 'nurse' || role === 'admin' ? '/admin' : '/family'} replace />;
+  }
+  return <>{children}</>;
+};
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -28,12 +44,17 @@ function AnimatedRoutes() {
           <Route path="/" element={<Landing />} />
           <Route path="/roles" element={<RoleSelection />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/family" element={<FamilyDashboard />} />
-          <Route path="/admin" element={<NurseDashboard />} />
-          <Route path="/schedule" element={<ScheduleVisit />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/patient/:id" element={<PatientDetails />} />
-          <Route path="/call/:id" element={<VideoCall />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/family" element={<ProtectedRoute allowedRoles={['family']}><FamilyDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NurseDashboard /></ProtectedRoute>} />
+          
+          <Route path="/schedule" element={<ProtectedRoute><ScheduleVisit /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/patient/:id" element={<ProtectedRoute><PatientDetails /></ProtectedRoute>} />
+          <Route path="/call/:id" element={<ProtectedRoute><VisitRoom /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </motion.div>

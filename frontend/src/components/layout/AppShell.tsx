@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, ChevronDown, LayoutDashboard, LogOut, Shield, Stethoscope, UserRound } from 'lucide-react';
+import { Bell, CalendarDays, ChevronDown, LayoutDashboard, LogOut, Shield, Stethoscope, UserRound, Video, MessageSquareText } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -15,6 +15,8 @@ const familyLinks = [
   { to: '/schedule', label: 'Schedule', icon: CalendarDays },
   { to: '/notifications', label: 'Notifications', icon: Bell },
   { to: '/patient/p-001', label: 'Patient Details', icon: UserRound },
+  { to: '/call/live-session', label: 'Video Call', icon: Video },
+  { to: '/messages', label: 'Messages', icon: MessageSquareText },
 ];
 
 const adminLinks = [
@@ -22,6 +24,8 @@ const adminLinks = [
   { to: '/schedule', label: 'Schedule', icon: CalendarDays },
   { to: '/notifications', label: 'Notifications', icon: Bell },
   { to: '/patient/p-001', label: 'Patient Details', icon: UserRound },
+  { to: '/call/live-session', label: 'Video Call', icon: Video },
+  { to: '/messages', label: 'Messages', icon: MessageSquareText },
 ];
 
 export default function AppShell({ children, role }: AppShellProps) {
@@ -98,7 +102,14 @@ export default function AppShell({ children, role }: AppShellProps) {
                   <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
                     <UserRound size={14} /> My Account
                   </button>
-                  <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-950/50">
+                  <button 
+                    onClick={() => {
+                       localStorage.removeItem('token');
+                       localStorage.removeItem('role');
+                       window.location.href = '/login';
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                  >
                     <LogOut size={14} /> Logout
                   </button>
                 </motion.div>

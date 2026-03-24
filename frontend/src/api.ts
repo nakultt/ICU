@@ -1,16 +1,18 @@
 const API_BASE = "/api";
 
-export const getUserId = () => localStorage.getItem("visicare_user_id");
-export const setUserId = (id: string) => localStorage.setItem("visicare_user_id", id);
+export const getToken = () => localStorage.getItem("visicare_token");
+export const setToken = (token: string) => localStorage.setItem("visicare_token", token);
+export const removeToken = () => localStorage.removeItem("visicare_token");
+
 export const getUserRole = () => localStorage.getItem("visicare_user_role");
 export const setUserRole = (role: string) => localStorage.setItem("visicare_user_role", role);
 
 async function request(path: string, options: RequestInit = {}) {
-  const userId = getUserId();
-  const headers = {
-    "Content-Type": "application/json",
-    ...(userId ? { "X-User-ID": userId } : {}),
-    ...(options.headers || {}),
+  const token = getToken();
+  const headers: Record<string, string> = {
+    ...((options.body instanceof FormData || typeof options.body === 'string' && options.body.includes('grant_type')) ? {} : { "Content-Type": "application/json" }),
+    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+    ...(options.headers as Record<string, string> || {}),
   };
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
@@ -22,10 +24,17 @@ async function request(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
-  identify: (data: { email: string; full_name: string; role: string }) => 
-    request("/auth/identify", { method: "POST", body: JSON.stringify(data) }),
-  
-  me: () => request("/auth/me"),
+  auth: {
+    register: (data: { email: string; password: string; full_name: string; role: string }) => 
+      request("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+    login: (params: URLSearchParams) => 
+      request("/auth/login", { 
+        method: "POST", 
+        body: params.toString(), 
+        headers: { "Content-Type": "application/x-www-form-urlencoded" } 
+      }),
+    me: () => request("/auth/me"),
+  },
 
   patients: {
     list: () => request("/patients"),

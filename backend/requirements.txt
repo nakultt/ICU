@@ -1,8 +1,10 @@
 fastapi
 uvicorn[standard]
-sqlalchemy[asyncio]
-aiosqlite
 pydantic
 pydantic-settings
 httpx
 websockets
+motor
+passlib[bcrypt]
+python-jose[cryptography]
+email-validator

@@ -3,9 +3,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     SECRET_KEY: str = "visicare-super-secret-key-change-in-production"
-    DATABASE_URL: str = "sqlite+aiosqlite:///./visicare.db"
+    MONGODB_URL: str = "mongodb+srv://sridbuser:dbusersri@srisivaranjani.oe9bhtr.mongodb.net/"
     DAILY_API_KEY: str = ""
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 24 hours
     ALGORITHM: str = "HS256"
 
     class Config:
