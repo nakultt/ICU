@@ -1,73 +1,141 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api, setUserId, setUserRole } from '../api';
-import { Heart, Stethoscope, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Activity, ArrowRight, LockKeyhole, MonitorPlay, ShieldCheck, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const features = [
+  {
+    title: 'Secure Communication',
+    text: 'Hospital-grade encrypted video channels for ICU family sessions.',
+    icon: LockKeyhole,
+  },
+  {
+    title: 'Fast Response Workflow',
+    text: 'Instant escalation and real-time approvals with live nurse oversight.',
+    icon: Zap,
+  },
+  {
+    title: 'Fully Controlled Access',
+    text: 'Staff-managed permissions for every room, schedule, and remote connection.',
+    icon: ShieldCheck,
+  },
+];
 
 export default function Landing() {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleIdentify = async (role: 'nurse' | 'family') => {
-    setLoading(true);
-    try {
-      const email = role === 'nurse' ? 'nurse@hospital.com' : 'family@guest.com';
-      const name = role === 'nurse' ? 'Nurse Priya' : 'Guest Family';
-      const user = await api.identify({ email, full_name: name, role });
-      setUserId(user.id);
-      setUserRole(user.role);
-      navigate(role === 'nurse' ? '/nurse' : '/family');
-    } catch (err) {
-      alert("Failed to connect to backend. Is it running?");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full text-center space-y-8 bg-white p-10 rounded-3xl shadow-2xl border border-white/50 backdrop-blur-sm">
-        <div className="space-y-2">
-          <div className="inline-flex items-center justify-center p-4 bg-blue-100 rounded-2xl mb-4">
-            <Heart className="w-12 h-12 text-blue-600 animate-pulse" />
+    <div className="app-grid-bg relative min-h-screen overflow-hidden px-4 py-6 md:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <div className="glass-card rounded-[2rem] p-8 md:p-12">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div>
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 inline-flex items-center gap-2 rounded-full bg-cyan-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200"
+              >
+                <Activity size={14} className="heartbeat" />
+                ICUConnect (VisiCare)
+              </motion.p>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl font-black leading-tight text-slate-900 dark:text-slate-100 md:text-6xl"
+              >
+                Virtual ICU Visit & Monitoring System
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-5 max-w-xl text-lg text-slate-600 dark:text-slate-300"
+              >
+                Premium healthcare SaaS interface for secure family connectivity, nurse-supervised video visits,
+                and centralized ICU communication control.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-8 flex flex-wrap gap-3"
+              >
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-cyan-300/40 transition hover:scale-[1.02]"
+                >
+                  Login
+                  <ArrowRight size={16} />
+                </Link>
+                <Link
+                  to="/roles"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Start Visit
+                  <MonitorPlay size={16} />
+                </Link>
+              </motion.div>
+
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                {features.map((feature, idx) => {
+                  const Icon = feature.icon;
+                  return (
+                    <motion.div
+                      key={feature.title}
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 + idx * 0.1 }}
+                      className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/70"
+                    >
+                      <div className="mb-2 inline-flex rounded-xl bg-cyan-100 p-2 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-200">
+                        <Icon size={16} />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{feature.title}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{feature.text}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.25 }}
+              className="relative mx-auto w-full max-w-[500px]"
+            >
+              <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan-300/40 blur-3xl" />
+              <div className="absolute -bottom-12 -left-10 h-48 w-48 rounded-full bg-teal-300/35 blur-3xl" />
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/50 bg-gradient-to-br from-cyan-100/90 via-white to-sky-100 p-6 shadow-2xl dark:border-slate-700 dark:from-cyan-900/40 dark:via-slate-900 dark:to-slate-800">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-100">Live ICU Session Queue</p>
+                  <span className="rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold text-teal-700 dark:bg-teal-900/50 dark:text-teal-200">
+                    Active
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3].map((item) => (
+                    <motion.div
+                      key={item}
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ duration: 2 + item, repeat: Infinity, ease: 'easeInOut' }}
+                      className="rounded-2xl border border-slate-200/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/80"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Bed A-10{item}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Family call request in progress</p>
+                        </div>
+                        <span className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">VisiCare</h1>
-          <p className="text-gray-500 text-lg">Virtual ICU Visitation Platform</p>
         </div>
-
-        <div className="grid gap-4 pt-4">
-          <button
-            onClick={() => handleIdentify('nurse')}
-            disabled={loading}
-            className="group flex items-center justify-between p-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all shadow-lg hover:shadow-blue-200 active:scale-95 disabled:opacity-50"
-          >
-            <div className="flex items-center gap-4 text-left">
-              <Stethoscope className="w-8 h-8 group-hover:rotate-12 transition-transform" />
-              <div>
-                <div className="font-bold text-lg">Hospital Staff</div>
-                <div className="text-blue-100 text-sm">Manage patients & visits</div>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleIdentify('family')}
-            disabled={loading}
-            className="group flex items-center justify-between p-6 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-100 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50"
-          >
-            <div className="flex items-center gap-4 text-left">
-              <Users className="w-8 h-8 text-blue-600 group-hover:scale-110 transition-transform" />
-              <div>
-                <div className="font-bold text-lg">Family Member</div>
-                <div className="text-gray-500 text-sm">Visit your loved ones</div>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        <p className="text-xs text-gray-400 pt-6">
-          Hackathon Edition • Fast, Secure, & Emotional Connection
-        </p>
       </div>
     </div>
   );
