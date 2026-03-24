@@ -100,7 +100,7 @@ export default function VisitRoom() {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#f4f7f9] dark:bg-slate-950 flex flex-col p-4 sm:p-6 overflow-hidden app-grid-bg">
+    <div className="min-h-[100dvh] bg-[#f4f7f9] dark:bg-slate-950 flex flex-col px-4 pb-4 pt-7 sm:px-6 sm:pb-6 sm:pt-10 overflow-y-auto overscroll-y-contain app-grid-bg">
       {requiresPatientSelection && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-white/70 dark:bg-slate-950/85 p-4 backdrop-blur-md">
           <div className="w-full max-w-lg rounded-3xl border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
@@ -175,7 +175,7 @@ export default function VisitRoom() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 relative flex items-center justify-center">
+      <div className="flex-1 min-h-0 relative">
         {!canStartCall && (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/65 dark:bg-slate-950/80 p-4 backdrop-blur-md">
             <div className="w-full max-w-md rounded-3xl border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
@@ -203,68 +203,66 @@ export default function VisitRoom() {
           </div>
         )}
 
-        {/* Video Container */}
-        <div className={`relative w-full h-full flex items-center justify-center transition-[margin] duration-300 ${showChat ? 'lg:mr-[22rem]' : ''}`}>
-          {/* Remote video (large) */}
-          <div className={`w-full ${isNurseView ? 'max-w-[min(88vw,1080px)]' : 'max-w-[min(96vw,1400px)]'} aspect-video max-h-full glass-card bg-slate-100 dark:bg-slate-900/80 rounded-4xl shadow-2xl overflow-hidden relative border-slate-300 dark:border-slate-700/50`}>
-            <div className="pointer-events-none absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-white/85 dark:bg-slate-900/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-200 backdrop-blur-md">
-              <ShieldCheck className="h-3.5 w-3.5" /> Secure Patient Session
-            </div>
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            {status !== 'connected' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/65 dark:bg-slate-900/60 backdrop-blur-sm z-10">
-                <div className="text-center space-y-6">
-                  <div className="w-24 h-24 mx-auto bg-white/90 dark:bg-slate-800/80 rounded-full flex items-center justify-center ring-1 ring-slate-300 dark:ring-white/10 shadow-2xl">
-                    <VideoIcon className="w-10 h-10 text-slate-400" />
-                  </div>
-                  <p className="text-slate-700 dark:text-slate-300 text-lg font-medium tracking-wide">
-                    {status === 'waiting' ? 'Waiting for the other person...' : 'Connecting securely...'}
-                  </p>
-                  <div className="flex justify-center gap-2">
-                    <div className="w-2.5 h-2.5 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <div className={`mx-auto grid min-h-[420px] w-full max-w-[1680px] items-start gap-4 ${showChat ? 'grid-cols-1 pt-2 sm:pt-3 lg:grid-cols-12' : 'grid-cols-1'}`}>
+          {/* Video Container */}
+          <div className={`relative min-h-0 ${showChat ? 'lg:col-span-8' : ''}`}>
+            {/* Remote video (large) */}
+            <div className={`relative w-full overflow-hidden rounded-4xl border border-slate-300 bg-slate-100 shadow-2xl dark:border-slate-700/50 dark:bg-slate-900/80 ${showChat ? 'h-[48dvh] min-h-[300px] sm:h-[52dvh] lg:h-[68dvh] lg:min-h-[520px]' : 'h-[56dvh] min-h-[340px] sm:h-[60dvh] lg:h-[72dvh] lg:min-h-[560px]'} ${showChat ? 'max-w-none' : isNurseView ? 'max-w-[min(88vw,1080px)]' : 'max-w-[min(96vw,1400px)]'} mx-auto glass-card`}>
+              <div className="pointer-events-none absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-white/85 dark:bg-slate-900/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-200 backdrop-blur-md">
+                <ShieldCheck className="h-3.5 w-3.5" /> Secure Patient Session
+              </div>
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              {status !== 'connected' && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/65 dark:bg-slate-900/60 backdrop-blur-sm z-10">
+                  <div className="text-center space-y-6">
+                    <div className="w-24 h-24 mx-auto bg-white/90 dark:bg-slate-800/80 rounded-full flex items-center justify-center ring-1 ring-slate-300 dark:ring-white/10 shadow-2xl">
+                      <VideoIcon className="w-10 h-10 text-slate-400" />
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300 text-lg font-medium tracking-wide">
+                      {status === 'waiting' ? 'Waiting for the other person...' : 'Connecting securely...'}
+                    </p>
+                    <div className="flex justify-center gap-2">
+                      <div className="w-2.5 h-2.5 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Local video (small overlay) */}
+            <motion.div
+              className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 ${isNurseView ? 'w-32 h-20 sm:w-40 sm:h-24 md:w-48 md:h-28 lg:w-52 lg:h-32' : 'w-36 h-24 sm:w-48 sm:h-32 md:w-56 md:h-36 lg:w-64 lg:h-40'} bg-slate-200 dark:bg-slate-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/30 dark:shadow-black/50 ring-2 ring-white/30 dark:ring-white/10 z-20`}
+            >
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover mirror"
+              />
+              <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs px-3 py-1 rounded-full font-bold shadow-lg">
+                You
               </div>
-            )}
+            </motion.div>
           </div>
 
-          {/* Local video (small overlay) */}
-          <motion.div 
-            drag
-            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-            dragElastic={0.1}
-            className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 ${isNurseView ? 'w-32 h-20 sm:w-40 sm:h-24 md:w-48 md:h-28 lg:w-52 lg:h-32' : 'w-36 h-24 sm:w-48 sm:h-32 md:w-56 md:h-36 lg:w-64 lg:h-40'} bg-slate-200 dark:bg-slate-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/30 dark:shadow-black/50 ring-2 ring-white/30 dark:ring-white/10 z-20 cursor-move`}
-          >
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover mirror"
-            />
-            <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs px-3 py-1 rounded-full font-bold shadow-lg">
-              You
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Chat Sidebar Overlay */}
-        <AnimatePresence>
-          {showChat && (
-            <motion.div
-              initial={{ opacity: 0, x: 20, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 20, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-full sm:max-w-sm lg:w-[22rem] z-30 flex flex-col glass-card bg-white/95 dark:bg-slate-900/90 rounded-4xl border-slate-300 dark:border-slate-700/50 shadow-2xl overflow-hidden"
-            >
+          {/* Chat Panel (3:2 split, non-floating) */}
+          <AnimatePresence>
+            {showChat && (
+              <motion.aside
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="min-h-0 flex h-[42dvh] min-h-[280px] max-h-[520px] flex-col overflow-hidden rounded-4xl border border-slate-300 bg-white/95 shadow-2xl lg:col-span-4 lg:h-[68dvh] lg:min-h-[520px] lg:max-h-none dark:border-slate-700/50 dark:bg-slate-900/90"
+              >
               <div className="p-5 border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between bg-slate-100/65 dark:bg-white/5">
                 <div className="flex items-center gap-3 relative">
                   <div className="status-dot text-emerald-400">
@@ -273,20 +271,60 @@ export default function VisitRoom() {
                   <h3 className="font-bold text-slate-900 dark:text-slate-100">Live Chat</h3>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button 
-                    onClick={toggleTTS} 
-                    title={isTTSEnabled ? "Disable Read-Aloud" : "Enable Read-Aloud"}
-                    className={`p-2 rounded-full transition-colors ${isTTSEnabled ? 'text-indigo-500 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/5'}`}
-                  >
-                    {isTTSEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                  </button>
                   <button onClick={() => setShowChat(false)} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
+              <div className="border-b border-slate-200 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/40 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <motion.button
+                    type="button"
+                    onClick={toggleTTS}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`relative inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${isTTSEnabled ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'}`}
+                  >
+                    {isTTSEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                    Text to Voice
+                    <AnimatePresence>
+                      {isTTSEnabled && (
+                        <motion.span
+                          initial={{ opacity: 0, scaleX: 0.2 }}
+                          animate={{ opacity: 1, scaleX: 1 }}
+                          exit={{ opacity: 0, scaleX: 0.2 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-x-2 -bottom-0.5 h-0.5 origin-center rounded-full bg-cyan-500"
+                        />
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={toggleListening}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`relative inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${isListening ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'}`}
+                  >
+                    <AudioLines className="h-4 w-4" />
+                    Voice to Text
+                    <AnimatePresence>
+                      {isListening && (
+                        <motion.span
+                          initial={{ opacity: 0, scaleX: 0.2 }}
+                          animate={{ opacity: 1, scaleX: 1 }}
+                          exit={{ opacity: 0, scaleX: 0.2 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-x-2 -bottom-0.5 h-0.5 origin-center rounded-full bg-rose-500"
+                        />
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                </div>
+              </div>
+
+              <div className="scrollbar-thin min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 [touch-action:pan-y]">
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-3">
                     <MessageSquare className="w-12 h-12 text-slate-500 mb-2" />
@@ -323,20 +361,12 @@ export default function VisitRoom() {
 
               <div className="p-4 border-t border-slate-200 dark:border-slate-700/50 bg-white/75 dark:bg-slate-900/50">
                 <form onSubmit={handleSendChat} className="flex gap-2 relative">
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    title="Voice Typing"
-                    className={`absolute left-1.5 top-1.5 bottom-1.5 aspect-square rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-rose-500/20 text-rose-500 animate-pulse' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'}`}
-                  >
-                    <AudioLines className="w-4 h-4" />
-                  </button>
                   <input
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder={isListening ? "Listening..." : "Type a message..."}
-                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
+                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-sm rounded-full pl-4 pr-12 py-3 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
                   />
                   <button 
                     type="submit" 
@@ -347,13 +377,14 @@ export default function VisitRoom() {
                   </button>
                 </form>
               </div>
-            </motion.div>
+              </motion.aside>
           )}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* Controls Bar */}
-      <div className={`pt-6 pb-2 flex justify-center items-center gap-3 sm:gap-6 z-10 w-full ${isNurseView ? 'max-w-lg' : 'max-w-xl'} mx-auto relative mt-auto`}>
+      <div className={`pt-6 pb-2 flex shrink-0 justify-center items-center gap-3 sm:gap-6 z-10 w-full ${isNurseView ? 'max-w-lg' : 'max-w-xl'} mx-auto relative mt-4`}>
         <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-300 dark:border-white/5 shadow-2xl rounded-full pointer-events-none -m-2" />
         <button 
           onClick={toggleMic}
