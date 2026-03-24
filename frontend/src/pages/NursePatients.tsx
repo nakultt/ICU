@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Edit3, Filter, KeyRound, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell';
 import StatusBadge from '../components/ui/StatusBadge';
 import { useToast } from '../components/ui/ToastProvider';
@@ -17,6 +18,12 @@ type Patient = {
   current_status: string;
   status_note: string;
   access_code: string;
+  primary_unit?: string;
+  latest_report?: string;
+  nurse_note?: string;
+  nurse_notes?: string;
+  doctor_reports?: Array<Record<string, string>>;
+  care_timeline?: Array<Record<string, string>>;
 };
 
 type PatientForm = {
@@ -38,6 +45,7 @@ const initialPatientForm: PatientForm = {
 };
 
 export default function NursePatients() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'stable' | 'critical'>('all');
   const [query, setQuery] = useState('');
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -45,10 +53,6 @@ export default function NursePatients() {
 
   const [newPatient, setNewPatient] = useState<PatientForm>(initialPatientForm);
   const [creatingPatient, setCreatingPatient] = useState(false);
-
-  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
-  const [editPatient, setEditPatient] = useState<PatientForm>(initialPatientForm);
-  const [updatingPatient, setUpdatingPatient] = useState(false);
   const [removingPatientId, setRemovingPatientId] = useState<string | null>(null);
   const [regeneratingCodeId, setRegeneratingCodeId] = useState<string | null>(null);
 
@@ -118,47 +122,6 @@ export default function NursePatients() {
     }
   };
 
-  const startEditPatient = (patient: Patient) => {
-    setEditingPatientId(patient.id);
-    setEditPatient({
-      full_name: patient.full_name,
-      age: patient.age ? String(patient.age) : '',
-      gender: patient.gender || '',
-      bed_number: patient.bed_number,
-      ward: patient.ward,
-      diagnosis: patient.diagnosis || '',
-    });
-  };
-
-  const updatePatient = async () => {
-    if (!editingPatientId) return;
-    if (!editPatient.full_name || !editPatient.bed_number) {
-      pushToast({ type: 'error', title: 'Missing fields', message: 'Patient name and bed number are required.' });
-      return;
-    }
-
-    try {
-      setUpdatingPatient(true);
-      await api.patients.update(editingPatientId, {
-        full_name: editPatient.full_name,
-        age: editPatient.age ? Number(editPatient.age) : null,
-        gender: editPatient.gender || null,
-        bed_number: editPatient.bed_number,
-        ward: editPatient.ward || 'ICU',
-        diagnosis: editPatient.diagnosis,
-      });
-      pushToast({ type: 'success', title: 'Patient updated', message: 'Patient details were updated.' });
-      setEditingPatientId(null);
-      setEditPatient(initialPatientForm);
-      await loadPatients();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not update patient';
-      pushToast({ type: 'error', title: 'Update failed', message });
-    } finally {
-      setUpdatingPatient(false);
-    }
-  };
-
   const removePatient = async (patient: Patient) => {
     const confirmed = window.confirm(`Remove ${patient.full_name} from active patients?`);
     if (!confirmed) return;
@@ -167,10 +130,6 @@ export default function NursePatients() {
       setRemovingPatientId(patient.id);
       await api.patients.remove(patient.id);
       pushToast({ type: 'success', title: 'Patient removed', message: `${patient.full_name} was removed from active list.` });
-      if (editingPatientId === patient.id) {
-        setEditingPatientId(null);
-        setEditPatient(initialPatientForm);
-      }
       await loadPatients();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not remove patient';
@@ -268,7 +227,7 @@ export default function NursePatients() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => startEditPatient(patient)}
+                    onClick={() => navigate(`/admin/patients/${patient.id}/edit`)}
                     className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                   >
                     <Edit3 size={13} /> Edit
@@ -288,91 +247,56 @@ export default function NursePatients() {
         </motion.section>
 
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="glass-card rounded-3xl p-5">
-          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">{editingPatientId ? 'Edit Patient' : 'Add Patient'}</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">Add Patient</h2>
           <div className="mt-4 space-y-3">
             <input
-              value={editingPatientId ? editPatient.full_name : newPatient.full_name}
-              onChange={(e) => editingPatientId
-                ? setEditPatient((prev) => ({ ...prev, full_name: e.target.value }))
-                : setNewPatient((prev) => ({ ...prev, full_name: e.target.value }))}
+              value={newPatient.full_name}
+              onChange={(e) => setNewPatient((prev) => ({ ...prev, full_name: e.target.value }))}
               placeholder="Full name"
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
-                value={editingPatientId ? editPatient.age : newPatient.age}
-                onChange={(e) => editingPatientId
-                  ? setEditPatient((prev) => ({ ...prev, age: e.target.value }))
-                  : setNewPatient((prev) => ({ ...prev, age: e.target.value }))}
+                value={newPatient.age}
+                onChange={(e) => setNewPatient((prev) => ({ ...prev, age: e.target.value }))}
                 placeholder="Age"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900"
               />
               <input
-                value={editingPatientId ? editPatient.gender : newPatient.gender}
-                onChange={(e) => editingPatientId
-                  ? setEditPatient((prev) => ({ ...prev, gender: e.target.value }))
-                  : setNewPatient((prev) => ({ ...prev, gender: e.target.value }))}
+                value={newPatient.gender}
+                onChange={(e) => setNewPatient((prev) => ({ ...prev, gender: e.target.value }))}
                 placeholder="Gender"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
-                value={editingPatientId ? editPatient.bed_number : newPatient.bed_number}
-                onChange={(e) => editingPatientId
-                  ? setEditPatient((prev) => ({ ...prev, bed_number: e.target.value }))
-                  : setNewPatient((prev) => ({ ...prev, bed_number: e.target.value }))}
+                value={newPatient.bed_number}
+                onChange={(e) => setNewPatient((prev) => ({ ...prev, bed_number: e.target.value }))}
                 placeholder="Bed number"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900"
               />
               <input
-                value={editingPatientId ? editPatient.ward : newPatient.ward}
-                onChange={(e) => editingPatientId
-                  ? setEditPatient((prev) => ({ ...prev, ward: e.target.value }))
-                  : setNewPatient((prev) => ({ ...prev, ward: e.target.value }))}
+                value={newPatient.ward}
+                onChange={(e) => setNewPatient((prev) => ({ ...prev, ward: e.target.value }))}
                 placeholder="Ward"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900"
               />
             </div>
             <textarea
-              value={editingPatientId ? editPatient.diagnosis : newPatient.diagnosis}
-              onChange={(e) => editingPatientId
-                ? setEditPatient((prev) => ({ ...prev, diagnosis: e.target.value }))
-                : setNewPatient((prev) => ({ ...prev, diagnosis: e.target.value }))}
+              value={newPatient.diagnosis}
+              onChange={(e) => setNewPatient((prev) => ({ ...prev, diagnosis: e.target.value }))}
               placeholder="Diagnosis / condition"
               className="h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900"
             />
-            {editingPatientId ? (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingPatientId(null);
-                    setEditPatient(initialPatientForm);
-                  }}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void updatePatient()}
-                  disabled={updatingPatient}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900"
-                >
-                  <Edit3 size={16} /> {updatingPatient ? 'Updating...' : 'Update Patient'}
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void createPatient()}
-                disabled={creatingPatient}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900"
-              >
-                <Plus size={16} /> {creatingPatient ? 'Adding...' : 'Add Patient'}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => void createPatient()}
+              disabled={creatingPatient}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900"
+            >
+              <Plus size={16} /> {creatingPatient ? 'Adding...' : 'Add Patient'}
+            </button>
           </div>
         </motion.section>
       </div>

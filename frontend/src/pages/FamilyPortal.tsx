@@ -1,16 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { Video, Calendar, Plus, Heart, MessageSquare, ArrowRight, Activity, Users } from 'lucide-react';
+import { Video, Calendar, Plus, Heart, MessageSquare, ArrowRight, Activity, Users, Search, ChevronsLeft, ChevronsRight } from 'lucide-react';
+
+type Patient = {
+  id: string;
+  full_name: string;
+  bed_number: string;
+  status_note: string;
+  current_status: string;
+};
+
+type Visit = {
+  id: string;
+  patient_id: string;
+  status: string;
+  scheduled_date: string;
+  scheduled_time: string;
+};
+
+const PATIENTS_PER_PAGE = 6;
 
 export default function FamilyPortal() {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState<any[]>([]);
-  const [visits, setVisits] = useState<any[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [visits, setVisits] = useState<Visit[]>([]);
   const [accessCode, setAccessCode] = useState('');
   const [showLink, setShowLink] = useState(false);
   const [showBook, setShowBook] = useState<{id: string, name: string} | null>(null);
   const [bookData, setBookData] = useState({ date: '', time: '' });
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'stable' | 'critical'>('all');
+  const [patientPage, setPatientPage] = useState(1);
 
   const load = React.useCallback(async () => {
     try {
@@ -22,10 +43,17 @@ export default function FamilyPortal() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timeout = window.setTimeout(() => {
+      void load();
+    }, 0);
     // Poll every 5 seconds so incoming calls from nurse show up
-    const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
+    const interval = window.setInterval(() => {
+      void load();
+    }, 5000);
+    return () => {
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+    };
   }, [load]);
 
   const handleLink = async (e: React.FormEvent) => {
@@ -34,7 +62,7 @@ export default function FamilyPortal() {
       await api.patients.link(accessCode, 'Family');
       setAccessCode('');
       setShowLink(false);
-      load();
+      void load();
     } catch (err) { alert(err); }
   };
 
@@ -47,7 +75,7 @@ export default function FamilyPortal() {
       scheduled_time: bookData.time
     });
     setShowBook(null);
-    load();
+    void load();
   };
 
   const handleInstantCall = async (patientId: string) => {
@@ -58,51 +86,83 @@ export default function FamilyPortal() {
   };
 
   // Find the most recent approved visit as the "incoming call"
-  const approvedVisits = visits.filter((v: any) => v.status === 'approved');
+  const approvedVisits = visits.filter((v) => v.status === 'approved');
   const incomingCall = approvedVisits.length > 0 ? approvedVisits[approvedVisits.length - 1] : null;
 
+  const filteredPatients = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    let result = patients;
+
+    if (normalizedQuery) {
+      result = result.filter((p) =>
+        p.full_name.toLowerCase().includes(normalizedQuery) ||
+        p.bed_number.toLowerCase().includes(normalizedQuery),
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      result = result.filter((p) => p.current_status.toLowerCase() === statusFilter);
+    }
+
+    return [...result].sort((a, b) => a.full_name.localeCompare(b.full_name));
+  }, [patients, query, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / PATIENTS_PER_PAGE));
+  const currentPage = Math.min(patientPage, totalPages);
+
+  const paginatedPatients = useMemo(() => {
+    const start = (currentPage - 1) * PATIENTS_PER_PAGE;
+    return filteredPatients.slice(start, start + PATIENTS_PER_PAGE);
+  }, [filteredPatients, currentPage]);
+
+  const statusCounts = useMemo(() => {
+    const stable = patients.filter((p) => p.current_status.toLowerCase() === 'stable').length;
+    const critical = patients.filter((p) => p.current_status.toLowerCase() === 'critical').length;
+    return { stable, critical, total: patients.length };
+  }, [patients]);
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-10 min-h-screen">
+    <div className="mx-auto min-h-screen w-full max-w-6xl space-y-8 px-4 py-6 md:px-6 lg:px-8">
       {/* Incoming Call Banner */}
       {incomingCall && (
-        <div className="bg-green-500 text-white p-5 rounded-2xl shadow-xl shadow-green-200 flex items-center justify-between animate-pulse">
+        <div className="surface-elevated flex items-center justify-between rounded-2xl border-l-4 border-l-cyan-500 p-5 text-slate-900">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="brand-gradient flex h-12 w-12 items-center justify-center rounded-full">
               <Video className="w-6 h-6" />
             </div>
             <div>
-              <div className="font-black text-lg">📞 Incoming Video Call</div>
-              <div className="text-green-100 text-sm">
-                {patients.find((p: any) => p.id === incomingCall.patient_id)?.full_name || 'Patient'} — tap to join now
+              <div className="text-lg font-black">Incoming Video Call</div>
+              <div className="text-sm text-slate-600">
+                {patients.find((p) => p.id === incomingCall.patient_id)?.full_name || 'Patient'} — tap to join now
               </div>
             </div>
           </div>
           <button
             onClick={() => navigate(`/visit/${incomingCall.id}`)}
-            className="bg-white text-green-600 px-6 py-3 rounded-xl font-black text-lg shadow-lg hover:bg-green-50 transition-all active:scale-95"
+            className="surface-elevated brand-heading px-6 py-3 rounded-xl font-black text-lg transition-all active:scale-95"
           >
             Join Call
           </button>
         </div>
       )}
 
-      <header className="flex items-center justify-between py-6">
+      <header className="surface-elevated flex items-center justify-between rounded-3xl px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
+          <div className="brand-gradient p-2 rounded-xl text-white shadow-lg shadow-cyan-200">
             <Heart className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900">VisiCare Family</h1>
+          <h1 className="brand-heading text-2xl font-black tracking-tight">VisiCare Family</h1>
         </div>
         <button 
           onClick={() => setShowLink(true)}
-          className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition-all active:scale-95"
+          className="surface-elevated flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 shadow-sm transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" /> Link Patient
         </button>
       </header>
 
       {patients.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center space-y-4">
+        <div className="surface-elevated flex flex-col items-center justify-center space-y-4 rounded-3xl border-2 border-dashed p-12 text-center">
           <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
             <Users className="w-10 h-10 text-gray-300" />
           </div>
@@ -110,47 +170,117 @@ export default function FamilyPortal() {
             <h2 className="text-xl font-bold text-gray-900">No linked patients yet</h2>
             <p className="text-gray-500 max-w-xs mx-auto">Enter the 6-digit access code provided by the ICU nurse to link your family member.</p>
           </div>
-          <button onClick={() => setShowLink(true)} className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-blue-100">Link Now</button>
+          <button onClick={() => setShowLink(true)} className="action-primary px-8 py-3 rounded-2xl font-bold">Link Now</button>
         </div>
       ) : (
         <div className="space-y-12">
           {/* Patient Cards */}
           <section className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-800 px-2 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-green-500" /> My Family Members
-            </h2>
-            <div className="grid gap-6">
-              {patients.map(p => (
-                <div key={p.id} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+            <div className="flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-gray-800 px-2 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-green-500" /> My Family Members
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Total {statusCounts.total}</span>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">Stable {statusCounts.stable}</span>
+                  <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700">Critical {statusCounts.critical}</span>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2">
+                  <Search className="h-4 w-4 text-gray-400" />
+                  <input
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setPatientPage(1);
+                    }}
+                    placeholder="Search by name or bed"
+                    className="w-full bg-transparent text-sm outline-none"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value as 'all' | 'stable' | 'critical');
+                    setPatientPage(1);
+                  }}
+                  className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 outline-none"
+                >
+                  <option value="all">All status</option>
+                  <option value="stable">Stable</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              {paginatedPatients.map(p => (
+                <div key={p.id} className="surface-elevated p-6 rounded-3xl flex flex-col justify-between gap-5 group">
                   <div className="space-y-2">
                     <div className="inline-flex px-3 py-1 bg-green-50 text-green-700 text-xs font-black uppercase tracking-widest rounded-full mb-1">
                       {p.current_status}
                     </div>
-                    <h3 className="text-3xl font-black text-gray-900 leading-none">{p.full_name}</h3>
-                    <div className="text-gray-500 text-lg flex items-center gap-2">
+                    <h3 className="text-2xl font-black text-gray-900 leading-none">{p.full_name}</h3>
+                    <div className="text-gray-500 text-base flex items-center gap-2">
                        Bed {p.bed_number} • <span className="text-sm italic">"{p.status_note}"</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button 
                       onClick={() => handleInstantCall(p.id)}
-                      className="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-4 rounded-2xl font-bold shadow-xl shadow-green-100 hover:bg-green-600 transition-all active:scale-95"
+                      className="action-primary inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-bold active:scale-95"
                     >
                       <Video className="w-5 h-5" /> Start Instant Call
                     </button>
                     <button 
                       onClick={() => setShowBook({id: p.id, name: p.full_name})}
-                      className="inline-flex items-center gap-2 bg-white border-2 border-gray-100 text-gray-700 px-6 py-4 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95"
+                      className="surface-elevated inline-flex items-center gap-2 text-gray-700 px-5 py-3 rounded-2xl font-bold transition-all active:scale-95"
                     >
                       <Calendar className="w-5 h-5" /> Schedule Visit
                     </button>
-                    <button className="p-4 bg-white border-2 border-gray-100 text-gray-400 rounded-2xl hover:bg-gray-50 hover:text-blue-600 transition-all">
+                    <button className="p-3 bg-white border-2 border-gray-100 text-gray-400 rounded-2xl hover:bg-gray-50 hover:text-blue-600 transition-all">
                       <MessageSquare className="w-6 h-6" />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
+
+            {filteredPatients.length === 0 && (
+              <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+                No patients match your search and filter.
+              </div>
+            )}
+
+            {filteredPatients.length > PATIENTS_PER_PAGE && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 text-sm">
+                <span className="font-semibold text-gray-600">
+                  Showing {(currentPage - 1) * PATIENTS_PER_PAGE + 1} to {Math.min(currentPage * PATIENTS_PER_PAGE, filteredPatients.length)} of {filteredPatients.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPatientPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-1.5 font-semibold text-gray-700 disabled:opacity-40"
+                  >
+                    <ChevronsLeft className="h-4 w-4" /> Prev
+                  </button>
+                  <span className="rounded-xl bg-slate-100 px-3 py-1.5 font-bold text-slate-700">Page {currentPage} / {totalPages}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPatientPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-1.5 font-semibold text-gray-700 disabled:opacity-40"
+                  >
+                    Next <ChevronsRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Visits Timeline */}
@@ -171,7 +301,7 @@ export default function FamilyPortal() {
                     </div>
                   </div>
                   {v.status === 'approved' ? (
-                    <button onClick={() => navigate(`/visit/${v.id}`)} className="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-green-600 shadow-lg shadow-green-100 transition-all group active:scale-95">
+                    <button onClick={() => navigate(`/visit/${v.id}`)} className="action-primary inline-flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all group active:scale-95">
                       Join Call <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                   ) : (
@@ -198,7 +328,7 @@ export default function FamilyPortal() {
               </div>
               <div className="flex justify-end gap-3 mt-8">
                 <button type="button" onClick={() => setShowLink(false)} className="px-6 py-3 font-semibold text-gray-500">Cancel</button>
-                <button type="submit" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-lg">Link Patient</button>
+                <button type="submit" className="action-primary px-8 py-3 font-bold rounded-2xl">Link Patient</button>
               </div>
             </form>
           </div>
@@ -225,7 +355,7 @@ export default function FamilyPortal() {
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setShowBook(null)} className="px-6 py-3 font-semibold text-gray-500">Cancel</button>
-                <button type="submit" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-lg">Request Visit</button>
+                <button type="submit" className="action-primary px-8 py-3 font-bold rounded-2xl">Request Visit</button>
               </div>
             </form>
           </div>

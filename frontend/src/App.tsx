@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import NotificationsPage from './pages/Notifications';
 import NurseDashboard from './pages/NurseDashboard';
 import NursePatients from './pages/NursePatients';
+import NursePatientEdit from './pages/NursePatientEdit';
 import PatientDetails from './pages/PatientDetails';
 import RoleSelection from './pages/RoleSelection';
 import ScheduleVisit from './pages/ScheduleVisit';
@@ -50,6 +51,7 @@ function AnimatedRoutes() {
           <Route path="/family" element={<ProtectedRoute allowedRoles={['family']}><FamilyDashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NurseDashboard /></ProtectedRoute>} />
           <Route path="/admin/patients" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NursePatients /></ProtectedRoute>} />
+          <Route path="/admin/patients/:id/edit" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NursePatientEdit /></ProtectedRoute>} />
           
           <Route path="/schedule" element={<ProtectedRoute allowedRoles={['family']}><ScheduleVisit /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute allowedRoles={['family', 'nurse', 'admin']}><NotificationsPage /></ProtectedRoute>} />

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, getUserRole } from '../api';
 import { useVideoCall } from '../hooks/useVideoCall';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X, Volume2, VolumeX, AudioLines } from 'lucide-react';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X, Volume2, VolumeX, AudioLines, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 
@@ -337,8 +337,6 @@ export default function VisitRoom() {
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder={isListening ? "Listening..." : "Type a message..."}
                     className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
-                    placeholder="Type a message..."
-                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-5 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
                   />
                   <button 
                     type="submit" 

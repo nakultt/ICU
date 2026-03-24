@@ -7,6 +7,8 @@ export const removeToken = () => localStorage.removeItem("visicare_token");
 export const getUserRole = () => localStorage.getItem("visicare_user_role");
 export const setUserRole = (role: string) => localStorage.setItem("visicare_user_role", role);
 
+type JsonObject = Record<string, unknown>;
+
 async function request(path: string, options: RequestInit = {}) {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -38,8 +40,9 @@ export const api = {
 
   patients: {
     list: () => request("/patients"),
-    create: (data: any) => request("/patients", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: string, data: any) => request(`/patients/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    getById: (id: string) => request(`/patients/${id}`),
+    create: (data: JsonObject) => request("/patients", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: JsonObject) => request(`/patients/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     regenerateAccessCode: (id: string) => request(`/patients/${id}/access-code`, { method: "PATCH" }),
     remove: (id: string) => request(`/patients/${id}`, { method: "DELETE" }),
     updateStatus: (id: string, status: string, note: string) => 
@@ -51,7 +54,7 @@ export const api = {
   visits: {
     list: () => request("/visits"),
     getById: (id: string) => request(`/visits/${id}`),
-    create: (data: any) => request("/visits", { method: "POST", body: JSON.stringify(data) }),
+    create: (data: JsonObject) => request("/visits", { method: "POST", body: JSON.stringify(data) }),
     approve: (id: string) => request(`/visits/${id}/approve`, { method: "PATCH" }),
     instant: (patient_id: string) => request("/visits/instant", { method: "POST", body: JSON.stringify({ patient_id }) }),
     complete: (id: string) => request(`/visits/${id}/complete`, { method: "PATCH" }),
