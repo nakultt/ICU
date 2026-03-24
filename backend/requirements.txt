@@ -5,6 +5,6 @@ pydantic-settings
 httpx
 websockets
 motor
-passlib[bcrypt]
+bcrypt
 python-jose[cryptography]
 email-validator

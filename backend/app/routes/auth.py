@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, EmailStr
-from passlib.context import CryptContext
+import bcrypt
 from jose import jwt
 
 from ..database import get_db
@@ -12,7 +12,16 @@ from ..config import settings
 from ..auth.deps import get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception:
+        return False
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -47,7 +56,7 @@ async def register(req: UserRegister, db: AsyncIOMotorDatabase = Depends(get_db)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
         
-    hashed_password = pwd_context.hash(req.password)
+    hashed_password = get_password_hash(req.password)
     user_data = {
         "_id": generate_uuid(),
         "email": req.email,
@@ -64,7 +73,7 @@ async def register(req: UserRegister, db: AsyncIOMotorDatabase = Depends(get_db)
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncIOMotorDatabase = Depends(get_db)):
     user_dict = await db.users.find_one({"email": form_data.username})
-    if not user_dict or not pwd_context.verify(form_data.password, user_dict["hashed_password"]):
+    if not user_dict or not verify_password(form_data.password, user_dict["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
