@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from ..database import get_db
 from ..models import Patient, FamilyLink, User, generate_uuid
 from ..auth.deps import get_current_user, require_role
@@ -67,6 +67,21 @@ class PatientUpdate(BaseModel):
     nurse_notes: Optional[str] = None
     doctor_reports: Optional[List[dict]] = None
     care_timeline: Optional[List[dict]] = None
+
+class MonitoringLogResponse(BaseModel):
+    id: str
+    patientId: str
+    patientName: str
+    nurseName: str
+    createdAt: str
+    updatedAt: str
+    status: str
+    vitals: Dict[str, Any]
+    doctor: Dict[str, Any]
+    doctorNotes: str
+    medicines: List[Dict[str, Any]]
+    careSteps: List[Dict[str, Any]]
+    reports: List[Dict[str, Any]]
 
 def _gen_access_code():
     return "".join(random.choices(string.digits, k=6))
@@ -195,6 +210,42 @@ async def get_patient(patient_id: str, db: AsyncIOMotorDatabase = Depends(get_db
                 if not link:
                         raise HTTPException(status_code=403, detail="Not authorized to view this patient")
     return _patient_to_resp(patient)
+
+@router.get("/{patient_id}/monitoring-logs", response_model=List[MonitoringLogResponse])
+async def get_monitoring_logs(
+    patient_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    patient = await db.patients.find_one({"_id": patient_id, "is_active": True})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    if user.role not in ("nurse", "admin"):
+        link = await db.family_links.find_one({"user_id": user.id, "patient_id": patient_id})
+        if not link:
+            raise HTTPException(status_code=403, detail="Not authorized to view this patient")
+
+    logs = await db.monitoring_logs.find({"patientId": patient_id}).sort("createdAt", -1).to_list(length=500)
+
+    return [
+        MonitoringLogResponse(
+            id=str(item.get("_id", "")),
+            patientId=item.get("patientId", patient_id),
+            patientName=item.get("patientName", patient.get("full_name", "")),
+            nurseName=item.get("nurseName", ""),
+            createdAt=item.get("createdAt", ""),
+            updatedAt=item.get("updatedAt", ""),
+            status=item.get("status", "stable"),
+            vitals=item.get("vitals", {}),
+            doctor=item.get("doctor", {}),
+            doctorNotes=item.get("doctorNotes", ""),
+            medicines=item.get("medicines", []),
+            careSteps=item.get("careSteps", []),
+            reports=item.get("reports", []),
+        )
+        for item in logs
+    ]
 
 @router.patch("/{patient_id}/status")
 async def update_status(

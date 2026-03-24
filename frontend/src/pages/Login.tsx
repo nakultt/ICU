@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { CircleAlert, CircleCheckBig, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { api, setToken, setUserRole } from '../api';
+import { api, setToken, setUserName, setUserRole } from '../api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,6 +27,7 @@ export default function Login() {
       
       setToken(data.access_token);
       setUserRole(data.role);
+      setUserName(data.full_name || email.split('@')[0] || 'Nurse');
 
       if (expectedRole && data.role !== expectedRole) {
         localStorage.removeItem('visicare_token');

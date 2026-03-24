@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, CircleX, ClipboardList, FileUp, PhoneOff, UsersRound, Video } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell';
 import StatusBadge from '../components/ui/StatusBadge';
 import { useToast } from '../components/ui/ToastProvider';
@@ -23,11 +23,21 @@ type Visit = {
 };
 
 export default function NurseDashboard() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [notes, setNotes] = useState('Maintain calm communication and update status every 2 hours.');
+  const [sessionPatientCode, setSessionPatientCode] = useState('');
+  const [openSessionModal, setOpenSessionModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const { pushToast } = useToast();
+
+  useEffect(() => {
+    if (searchParams.get('startSession') === '1') {
+      setOpenSessionModal(true);
+    }
+  }, [searchParams]);
 
   const loadDashboard = async () => {
     try {
@@ -89,11 +99,18 @@ export default function NurseDashboard() {
                 <UsersRound size={16} /> Manage Patients
               </Link>
               <Link
-                to="/call/live-session"
+                to="/admin/monitoring"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-3 text-sm font-bold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-900/30 dark:text-cyan-200"
+              >
+                <ClipboardList size={16} /> ICU Monitoring Logs
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpenSessionModal(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-3 text-sm font-bold text-white"
               >
                 <Video size={16} /> Open Patient Session
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => pushToast({ type: 'error', title: 'Emergency call terminated', message: 'All participants disconnected.' })}
@@ -195,6 +212,54 @@ export default function NurseDashboard() {
           </motion.div>
         </section>
       </div>
+
+      {openSessionModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">Select Patient for Video Session</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Enter the patient code to start this call.</p>
+
+            <div className="mt-4 space-y-3">
+              <input
+                type="text"
+                value={sessionPatientCode}
+                onChange={(e) => setSessionPatientCode(e.target.value.toUpperCase())}
+                placeholder="Enter patient code"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                autoFocus
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenSessionModal(false);
+                    setSessionPatientCode('');
+                    navigate('/admin', { replace: true });
+                  }}
+                  className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const normalizedCode = sessionPatientCode.trim().toUpperCase();
+                    if (normalizedCode) {
+                      setOpenSessionModal(false);
+                      navigate(`/call/${normalizedCode}`);
+                    }
+                  }}
+                  disabled={!sessionPatientCode.trim()}
+                  className="rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+                >
+                  Start Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

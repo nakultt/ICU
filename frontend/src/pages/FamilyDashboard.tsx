@@ -234,10 +234,22 @@ export default function FamilyDashboard() {
                   <Video size={17} /> Start Call
                 </Link>
                 <Link
+                  to="/family/live-monitor"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-300 bg-cyan-50 px-5 py-3 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100 dark:border-cyan-900/60 dark:bg-cyan-900/30 dark:text-cyan-200"
+                >
+                  <PhoneCall size={17} /> Live Monitor
+                </Link>
+                <Link
                   to="/schedule"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   <CalendarDays size={17} /> Schedule Visit
+                </Link>
+                <Link
+                  to="/family/report"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                >
+                  <Bell size={17} /> Full Report + PDF
                 </Link>
                 <button
                   type="button"

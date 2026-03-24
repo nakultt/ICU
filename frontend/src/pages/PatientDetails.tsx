@@ -12,7 +12,7 @@ type DoctorReport = {
   doctor: string;
   specialty: string;
   summary: string;
-  plan: string;
+  plan?: string;
 };
 
 type TimelineItem = {
@@ -184,9 +184,11 @@ export default function PatientDetails() {
                 <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
                   <span className="font-semibold text-slate-900 dark:text-slate-100">Report:</span> {report.summary}
                 </p>
-                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">Plan:</span> {report.plan}
-                </p>
+                {report.plan?.trim() && (
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">Plan:</span> {report.plan}
+                  </p>
+                )}
               </div>
             ))}
           </div>

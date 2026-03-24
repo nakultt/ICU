@@ -18,6 +18,9 @@ import RoleSelection from './pages/RoleSelection';
 import ScheduleVisit from './pages/ScheduleVisit';
 import VisitRoom from './pages/VisitRoom';
 import MessagesPage from './pages/Messages';
+import NurseMonitoringDashboard from './pages/NurseMonitoringDashboard';
+import PatientLiveMonitoring from './pages/PatientLiveMonitoring';
+import PatientReportPage from './pages/PatientReportPage';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const token = getToken();
@@ -52,10 +55,14 @@ function AnimatedRoutes() {
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NurseDashboard /></ProtectedRoute>} />
           <Route path="/admin/patients" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NursePatients /></ProtectedRoute>} />
           <Route path="/admin/patients/:id/edit" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NursePatientEdit /></ProtectedRoute>} />
+          <Route path="/admin/monitoring" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NurseMonitoringDashboard /></ProtectedRoute>} />
+          <Route path="/admin/report" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><PatientReportPage /></ProtectedRoute>} />
           
           <Route path="/schedule" element={<ProtectedRoute allowedRoles={['family']}><ScheduleVisit /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute allowedRoles={['family', 'nurse', 'admin']}><NotificationsPage /></ProtectedRoute>} />
           <Route path="/patient/:id" element={<ProtectedRoute allowedRoles={['family']}><PatientDetails /></ProtectedRoute>} />
+          <Route path="/family/live-monitor" element={<ProtectedRoute allowedRoles={['family']}><PatientLiveMonitoring /></ProtectedRoute>} />
+          <Route path="/family/report" element={<ProtectedRoute allowedRoles={['family', 'nurse', 'admin']}><PatientReportPage /></ProtectedRoute>} />
           <Route path="/call/:id" element={<ProtectedRoute allowedRoles={['family', 'nurse', 'admin']}><VisitRoom /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute allowedRoles={['family']}><MessagesPage /></ProtectedRoute>} />
           

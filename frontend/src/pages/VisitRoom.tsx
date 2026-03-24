@@ -11,7 +11,6 @@ export default function VisitRoom() {
   const navigate = useNavigate();
   const [canStartCall, setCanStartCall] = useState(false);
   const [askedPermission, setAskedPermission] = useState(false);
-  const [selectedPatientCode, setSelectedPatientCode] = useState('');
   const [showMood, setShowMood] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
@@ -19,6 +18,7 @@ export default function VisitRoom() {
 
   const role = getUserRole() || 'family';
   const isNurseView = role === 'nurse' || role === 'admin';
+  const postCallPath = role === 'nurse' || role === 'admin' ? '/admin' : '/family';
   const patientCode = (id || '').toUpperCase();
   const requiresPatientSelection = isNurseView && patientCode === 'LIVE-SESSION';
   const peerId = `${role}-${patientCode}`;
@@ -58,6 +58,12 @@ export default function VisitRoom() {
     }
   }, [messages, showChat]);
 
+  useEffect(() => {
+    if (requiresPatientSelection) {
+      navigate('/admin?startSession=1', { replace: true });
+    }
+  }, [requiresPatientSelection, navigate]);
+
   const handleSendChat = (e: React.FormEvent) => {
     e.preventDefault();
     if (chatInput.trim()) {
@@ -77,7 +83,7 @@ export default function VisitRoom() {
 
   const handleMood = async (score: number) => {
     if (id) await api.visits.logMood(id, score);
-    navigate(role === 'nurse' ? '/admin' : '/family');
+    navigate(postCallPath);
   };
 
   const statusLabel = {
@@ -101,47 +107,6 @@ export default function VisitRoom() {
 
   return (
     <div className="min-h-[100dvh] bg-[#f4f7f9] dark:bg-slate-950 flex flex-col px-4 pb-4 pt-7 sm:px-6 sm:pb-6 sm:pt-10 overflow-y-auto overscroll-y-contain app-grid-bg">
-      {requiresPatientSelection && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-white/70 dark:bg-slate-950/85 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">Select Patient for Video Session</h3>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Enter the patient code to start this call.</p>
-
-            <div className="mt-4 space-y-3">
-              <input
-                type="text"
-                value={selectedPatientCode}
-                onChange={(e) => setSelectedPatientCode(e.target.value.toUpperCase())}
-                placeholder="Enter patient code"
-                className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-cyan-500"
-                autoFocus
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin')}
-                  className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const normalizedCode = selectedPatientCode.trim().toUpperCase();
-                    if (normalizedCode) navigate(`/call/${normalizedCode}`);
-                  }}
-                  disabled={!selectedPatientCode.trim()}
-                  className="rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
-                >
-                  Start Session
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 top-16 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
         <div className="absolute -right-28 bottom-20 h-72 w-72 rounded-full bg-teal-500/20 blur-3xl" />
@@ -455,7 +420,7 @@ export default function VisitRoom() {
               </div>
 
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
-                <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-slate-600 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Skip for now</button>
+                <button onClick={() => navigate(postCallPath)} className="w-full py-2 text-sm text-slate-600 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Skip for now</button>
               </div>
             </motion.div>
           </motion.div>

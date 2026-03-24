@@ -6,6 +6,8 @@ export const removeToken = () => localStorage.removeItem("visicare_token");
 
 export const getUserRole = () => localStorage.getItem("visicare_user_role");
 export const setUserRole = (role: string) => localStorage.setItem("visicare_user_role", role);
+export const getUserName = () => localStorage.getItem("visicare_user_name");
+export const setUserName = (name: string) => localStorage.setItem("visicare_user_name", name);
 
 type JsonObject = Record<string, unknown>;
 
@@ -41,6 +43,7 @@ export const api = {
   patients: {
     list: () => request("/patients"),
     getById: (id: string) => request(`/patients/${id}`),
+    getMonitoringLogs: (id: string) => request(`/patients/${id}/monitoring-logs`),
     create: (data: JsonObject) => request("/patients", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: JsonObject) => request(`/patients/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     regenerateAccessCode: (id: string) => request(`/patients/${id}/access-code`, { method: "PATCH" }),

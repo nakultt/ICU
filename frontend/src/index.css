@@ -446,7 +446,51 @@ html.dark .nav-link-active {
 	50% {
 		transform: translate3d(2%, 1%, 0) scale(1.03);
 	}
+	50% {
+		transform: translate3d(2%, 1%, 0) scale(1.03);
+	}
 	100% {
+
+.icu-monitor-panel {
+	background: linear-gradient(160deg, rgba(2, 6, 23, 0.88) 0%, rgba(15, 23, 42, 0.86) 62%, rgba(7, 17, 35, 0.9) 100%);
+	border: 1px solid rgba(103, 232, 249, 0.22);
+	box-shadow: 0 20px 45px rgba(2, 6, 23, 0.48);
+}
+
+.live-pill {
+	animation: live-badge-blink 1.4s ease-in-out infinite;
+	background: rgba(8, 145, 178, 0.22);
+}
+
+.critical-glow {
+	box-shadow:
+		0 0 0 1px rgba(251, 113, 133, 0.3),
+		0 0 18px rgba(244, 63, 94, 0.35),
+		0 0 38px rgba(244, 63, 94, 0.2);
+}
+
+.ecg-scroll {
+	animation: ecg-scroll 6s linear infinite;
+}
+
+@keyframes ecg-scroll {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-54%);
+	}
+}
+
+@keyframes live-badge-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.55;
+	}
+}
 		transform: translate3d(-1%, 2%, 0) scale(1.01);
 	}
 }

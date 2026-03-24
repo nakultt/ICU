@@ -293,7 +293,7 @@ export default function NursePatients() {
               type="button"
               onClick={() => void createPatient()}
               disabled={creatingPatient}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 disabled:opacity-70"
             >
               <Plus size={16} /> {creatingPatient ? 'Adding...' : 'Add Patient'}
             </button>
