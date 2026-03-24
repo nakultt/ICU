@@ -100,12 +100,12 @@ export default function VisitRoom() {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950 flex flex-col p-4 sm:p-6 overflow-hidden app-grid-bg">
+    <div className="fixed inset-0 bg-[#f4f7f9] dark:bg-slate-950 flex flex-col p-4 sm:p-6 overflow-hidden app-grid-bg">
       {requiresPatientSelection && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-900/95 p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-slate-100">Select Patient for Video Session</h3>
-            <p className="mt-2 text-sm text-slate-400">Enter the patient code to start this call.</p>
+        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-white/70 dark:bg-slate-950/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">Select Patient for Video Session</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Enter the patient code to start this call.</p>
 
             <div className="mt-4 space-y-3">
               <input
@@ -113,7 +113,7 @@ export default function VisitRoom() {
                 value={selectedPatientCode}
                 onChange={(e) => setSelectedPatientCode(e.target.value.toUpperCase())}
                 placeholder="Enter patient code"
-                className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-cyan-500"
                 autoFocus
               />
 
@@ -121,7 +121,7 @@ export default function VisitRoom() {
                 <button
                   type="button"
                   onClick={() => navigate('/admin')}
-                  className="rounded-2xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200"
+                  className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200"
                 >
                   Cancel
                 </button>
@@ -154,14 +154,14 @@ export default function VisitRoom() {
             <Heart className="w-5 h-5 heartbeat" />
           </div>
           <div>
-             <h3 className="text-white font-bold leading-tight">Live Visit Session</h3>
+             <h3 className="text-slate-900 dark:text-white font-bold leading-tight">Live Visit Session</h3>
              <p className="text-cyan-400 text-xs tracking-widest uppercase font-black">WebRTC • Peer-to-Peer</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-slate-800/80 border border-slate-700/50 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg">
-            <span className="text-slate-400 text-xs font-bold mr-1">Room:</span>
-            <span className="text-slate-100 font-mono text-sm font-black tracking-wider">{roomCode}</span>
+          <div className="bg-white/85 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700/50 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg">
+            <span className="text-slate-600 dark:text-slate-400 text-xs font-bold mr-1">Room:</span>
+            <span className="text-slate-900 dark:text-slate-100 font-mono text-sm font-black tracking-wider">{roomCode}</span>
           </div>
           {status === 'connected' && (
             <div className="bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/50 px-3 py-1 rounded-xl text-xs font-black animate-pulse flex items-center gap-2">
@@ -177,17 +177,17 @@ export default function VisitRoom() {
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 relative flex items-center justify-center">
         {!canStartCall && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-            <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/95 p-6 shadow-2xl">
-              <h3 className="text-xl font-black text-slate-100">Start Video Call?</h3>
-              <p className="mt-2 text-sm text-slate-400">
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/65 dark:bg-slate-950/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-md rounded-3xl border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">Start Video Call?</h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 {askedPermission ? 'Please choose whether you want to start this call.' : 'Do you want to start the secure patient video call now?'}
               </p>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => handleCallPermission(false)}
-                  className="rounded-2xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200"
+                  className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200"
                 >
                   Not now
                 </button>
@@ -206,8 +206,8 @@ export default function VisitRoom() {
         {/* Video Container */}
         <div className={`relative w-full h-full flex items-center justify-center transition-[margin] duration-300 ${showChat ? 'lg:mr-[22rem]' : ''}`}>
           {/* Remote video (large) */}
-          <div className={`w-full ${isNurseView ? 'max-w-[min(88vw,1080px)]' : 'max-w-[min(96vw,1400px)]'} aspect-video max-h-full glass-card !bg-slate-900/80 rounded-4xl shadow-2xl overflow-hidden relative border-slate-700/50`}>
-            <div className="pointer-events-none absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-slate-900/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-200 backdrop-blur-md">
+          <div className={`w-full ${isNurseView ? 'max-w-[min(88vw,1080px)]' : 'max-w-[min(96vw,1400px)]'} aspect-video max-h-full glass-card bg-slate-100 dark:bg-slate-900/80 rounded-4xl shadow-2xl overflow-hidden relative border-slate-300 dark:border-slate-700/50`}>
+            <div className="pointer-events-none absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-white/85 dark:bg-slate-900/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-200 backdrop-blur-md">
               <ShieldCheck className="h-3.5 w-3.5" /> Secure Patient Session
             </div>
             <video
@@ -217,12 +217,12 @@ export default function VisitRoom() {
               className="w-full h-full object-cover"
             />
             {status !== 'connected' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm z-10">
+              <div className="absolute inset-0 flex items-center justify-center bg-white/65 dark:bg-slate-900/60 backdrop-blur-sm z-10">
                 <div className="text-center space-y-6">
-                  <div className="w-24 h-24 mx-auto bg-slate-800/80 rounded-full flex items-center justify-center ring-1 ring-white/10 shadow-2xl">
+                  <div className="w-24 h-24 mx-auto bg-white/90 dark:bg-slate-800/80 rounded-full flex items-center justify-center ring-1 ring-slate-300 dark:ring-white/10 shadow-2xl">
                     <VideoIcon className="w-10 h-10 text-slate-400" />
                   </div>
-                  <p className="text-slate-300 text-lg font-medium tracking-wide">
+                  <p className="text-slate-700 dark:text-slate-300 text-lg font-medium tracking-wide">
                     {status === 'waiting' ? 'Waiting for the other person...' : 'Connecting securely...'}
                   </p>
                   <div className="flex justify-center gap-2">
@@ -240,7 +240,7 @@ export default function VisitRoom() {
             drag
             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.1}
-            className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 ${isNurseView ? 'w-32 h-20 sm:w-40 sm:h-24 md:w-48 md:h-28 lg:w-52 lg:h-32' : 'w-36 h-24 sm:w-48 sm:h-32 md:w-56 md:h-36 lg:w-64 lg:h-40'} bg-slate-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/50 ring-2 ring-white/10 z-20 cursor-move`}
+            className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 ${isNurseView ? 'w-32 h-20 sm:w-40 sm:h-24 md:w-48 md:h-28 lg:w-52 lg:h-32' : 'w-36 h-24 sm:w-48 sm:h-32 md:w-56 md:h-36 lg:w-64 lg:h-40'} bg-slate-200 dark:bg-slate-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/30 dark:shadow-black/50 ring-2 ring-white/30 dark:ring-white/10 z-20 cursor-move`}
           >
             <video
               ref={localVideoRef}
@@ -263,24 +263,24 @@ export default function VisitRoom() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-full sm:max-w-sm lg:w-[22rem] z-30 flex flex-col glass-card !bg-slate-900/90 rounded-4xl border-slate-700/50 shadow-2xl overflow-hidden"
+              className="absolute right-0 top-0 bottom-0 w-full sm:max-w-sm lg:w-[22rem] z-30 flex flex-col glass-card bg-white/95 dark:bg-slate-900/90 rounded-4xl border-slate-300 dark:border-slate-700/50 shadow-2xl overflow-hidden"
             >
-              <div className="p-5 border-b border-slate-700/50 flex items-center justify-between bg-white/5">
+              <div className="p-5 border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between bg-slate-100/65 dark:bg-white/5">
                 <div className="flex items-center gap-3 relative">
                   <div className="status-dot text-emerald-400">
                     <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full" />
                   </div>
-                  <h3 className="font-bold text-slate-100">Live Chat</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100">Live Chat</h3>
                 </div>
                 <div className="flex items-center gap-1">
                   <button 
                     onClick={toggleTTS} 
                     title={isTTSEnabled ? "Disable Read-Aloud" : "Enable Read-Aloud"}
-                    className={`p-2 rounded-full transition-colors ${isTTSEnabled ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                    className={`p-2 rounded-full transition-colors ${isTTSEnabled ? 'text-indigo-500 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/5'}`}
                   >
                     {isTTSEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                   </button>
-                  <button onClick={() => setShowChat(false)} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                  <button onClick={() => setShowChat(false)} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -307,7 +307,7 @@ export default function VisitRoom() {
                         <div className={`px-4 py-2.5 shadow-md flex flex-col gap-1 max-w-[85%] ${
                           isMe 
                             ? 'bg-gradient-to-br from-cyan-600 to-teal-600 text-white rounded-t-2xl rounded-l-2xl rounded-br-sm' 
-                            : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-t-2xl rounded-r-2xl rounded-bl-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-t-2xl rounded-r-2xl rounded-bl-sm'
                         }`}>
                           <p className="text-sm leading-relaxed whitespace-pre-wrap word-break">{msg.text}</p>
                           <span className={`text-[9px] ${isMe ? 'text-cyan-100' : 'text-slate-500'} self-end mt-1`}>
@@ -321,13 +321,13 @@ export default function VisitRoom() {
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="p-4 border-t border-slate-700/50 bg-slate-900/50">
+              <div className="p-4 border-t border-slate-200 dark:border-slate-700/50 bg-white/75 dark:bg-slate-900/50">
                 <form onSubmit={handleSendChat} className="flex gap-2 relative">
                   <button
                     type="button"
                     onClick={toggleListening}
                     title="Voice Typing"
-                    className={`absolute left-1.5 top-1.5 bottom-1.5 aspect-square rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-rose-500/20 text-rose-500 animate-pulse' : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'}`}
+                    className={`absolute left-1.5 top-1.5 bottom-1.5 aspect-square rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-rose-500/20 text-rose-500 animate-pulse' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'}`}
                   >
                     <AudioLines className="w-4 h-4" />
                   </button>
@@ -336,7 +336,7 @@ export default function VisitRoom() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder={isListening ? "Listening..." : "Type a message..."}
-                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
+                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
                   />
                   <button 
                     type="submit" 
@@ -354,22 +354,22 @@ export default function VisitRoom() {
 
       {/* Controls Bar */}
       <div className={`pt-6 pb-2 flex justify-center items-center gap-3 sm:gap-6 z-10 w-full ${isNurseView ? 'max-w-lg' : 'max-w-xl'} mx-auto relative mt-auto`}>
-        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xl border border-white/5 shadow-2xl rounded-full pointer-events-none -m-2" />
+        <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-300 dark:border-white/5 shadow-2xl rounded-full pointer-events-none -m-2" />
         <button 
           onClick={toggleMic}
-          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${isMuted ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${isMuted ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
         >
           {isMuted ? <MicOff className="w-6 h-6 sm:w-7 sm:h-7" /> : <Mic className="w-6 h-6 sm:w-7 sm:h-7" />}
         </button>
         <button 
           onClick={toggleVideo}
-          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${isVideoOff ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${isVideoOff ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
         >
           {isVideoOff ? <VideoOff className="w-6 h-6 sm:w-7 sm:h-7" /> : <VideoIcon className="w-6 h-6 sm:w-7 sm:h-7" />}
         </button>
         <button 
           onClick={() => setShowChat(prev => !prev)}
-          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${showChat ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30 ring-2 ring-cyan-400' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+          className={`relative z-10 p-4 sm:p-5 rounded-full transition-all active:scale-90 ${showChat ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30 ring-2 ring-cyan-400' : 'bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
         >
           <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7" />
           {messages.length > 0 && !showChat && (
@@ -391,19 +391,19 @@ export default function VisitRoom() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-6 z-[60]"
+            className="fixed inset-0 bg-white/70 dark:bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-6 z-[60]"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ type: 'spring', bounce: 0.4 }}
-              className="glass-card w-full max-w-md rounded-[3rem] p-10 text-center space-y-8 shadow-2xl relative overflow-hidden"
+              className="glass-card w-full max-w-md rounded-[3rem] p-10 text-center space-y-8 shadow-2xl relative overflow-hidden bg-white/95 dark:bg-slate-900/90"
             >
               <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-cyan-500 via-sky-500 to-teal-500" />
               
               <div className="space-y-3">
-                <h2 className="text-3xl font-black text-slate-100">How do you feel?</h2>
-                <p className="text-slate-400 font-medium">Your connection helps the recovery process.</p>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100">How do you feel?</h2>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">Your connection helps the recovery process.</p>
               </div>
               
               <div className="flex justify-between items-center px-2 gap-2 sm:gap-4">
@@ -413,18 +413,18 @@ export default function VisitRoom() {
                     onClick={() => handleMood(score)}
                     className="group flex flex-col items-center gap-3 outline-none"
                   >
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-125 group-hover:-translate-y-2 group-hover:bg-cyan-500/20 group-hover:shadow-[0_10px_25px_rgba(8,145,178,0.3)] transition-all duration-300 group-active:scale-95 border border-white/5">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-125 group-hover:-translate-y-2 group-hover:bg-cyan-500/20 group-hover:shadow-[0_10px_25px_rgba(8,145,178,0.3)] transition-all duration-300 group-active:scale-95 border border-slate-200 dark:border-white/5">
                       {['😢', '😟', '😐', '😊', '🥰'][score-1]}
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-cyan-400 transition-colors">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors">
                       {['Poor', 'Fair', 'Good', 'Great', 'Awesome'][score-1]}
                     </span>
                   </button>
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-slate-700/50">
-                <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-slate-400 font-bold hover:text-slate-200 transition-colors">Skip for now</button>
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-slate-600 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Skip for now</button>
               </div>
             </motion.div>
           </motion.div>
