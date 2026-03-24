@@ -58,13 +58,19 @@ async def signaling(ws: WebSocket, room_id: str, peer_id: str):
     try:
         while True:
             data = await ws.receive_text()
-            msg = json.loads(data)
-            target = msg.get("target")
+            
+            target = None
+            try:
+                msg = json.loads(data)
+                if isinstance(msg, dict):
+                    target = msg.get("target")
+            except Exception:
+                pass
 
             if target and room_id in rooms and target in rooms[room_id]:
                 # Forward the message to the specific target peer
                 await rooms[room_id][target].send_text(data)
-            elif not target:
+            else:
                 # Broadcast to all other peers in the room
                 for pid, peer_ws in rooms[room_id].items():
                     if pid != peer_id:
