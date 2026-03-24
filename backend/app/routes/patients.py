@@ -32,8 +32,15 @@ class PatientResponse(BaseModel):
     is_conscious: bool
     current_status: str
     status_note: str
+    status_updated_at: str
     is_active: bool
     access_code: str
+    primary_unit: str
+    latest_report: str
+    nurse_note: str
+    nurse_notes: str
+    doctor_reports: List[dict]
+    care_timeline: List[dict]
 
 class StatusUpdate(BaseModel):
     status: str
@@ -52,6 +59,14 @@ class PatientUpdate(BaseModel):
     ward: Optional[str] = None
     diagnosis: Optional[str] = None
     is_conscious: Optional[bool] = None
+    current_status: Optional[str] = None
+    status_note: Optional[str] = None
+    primary_unit: Optional[str] = None
+    latest_report: Optional[str] = None
+    nurse_note: Optional[str] = None
+    nurse_notes: Optional[str] = None
+    doctor_reports: Optional[List[dict]] = None
+    care_timeline: Optional[List[dict]] = None
 
 def _gen_access_code():
     return "".join(random.choices(string.digits, k=6))
@@ -66,20 +81,34 @@ async def _gen_unique_access_code(db: AsyncIOMotorDatabase) -> str:
 
 def _patient_to_resp(p: dict) -> PatientResponse:
     adm_dt = p.get("admission_date")
+    status_dt = p.get("status_updated_at")
     if isinstance(adm_dt, datetime):
         adm_iso = adm_dt.isoformat()
     elif isinstance(adm_dt, str):
         adm_iso = adm_dt
     else:
         adm_iso = ""
+
+    if isinstance(status_dt, datetime):
+        status_iso = status_dt.isoformat()
+    elif isinstance(status_dt, str):
+        status_iso = status_dt
+    else:
+        status_iso = ""
         
     return PatientResponse(
         id=p["_id"], full_name=p["full_name"], age=p.get("age"), gender=p.get("gender"),
         bed_number=p["bed_number"], ward=p["ward"], diagnosis=p.get("diagnosis", ""),
         admission_date=adm_iso,
         is_conscious=p.get("is_conscious", True), current_status=p.get("current_status", ""),
-        status_note=p.get("status_note", ""), is_active=p.get("is_active", True), 
+        status_note=p.get("status_note", ""), status_updated_at=status_iso, is_active=p.get("is_active", True),
         access_code=p.get("access_code", ""),
+        primary_unit=p.get("primary_unit", "Critical Care"),
+        latest_report=p.get("latest_report", ""),
+        nurse_note=p.get("nurse_note", ""),
+        nurse_notes=p.get("nurse_notes", ""),
+        doctor_reports=p.get("doctor_reports", []),
+        care_timeline=p.get("care_timeline", []),
     )
 
 @router.post("", response_model=PatientResponse)
@@ -101,6 +130,12 @@ async def create_patient(
         "access_code": access_code,
         "current_status": "STABLE",
         "status_note": "Condition stable",
+        "primary_unit": "Critical Care",
+        "latest_report": "Clinical response stable",
+        "nurse_note": "Continue monitored support.",
+        "nurse_notes": "Patient under regular ICU monitoring.",
+        "doctor_reports": [],
+        "care_timeline": [],
         "admission_date": datetime.utcnow(),
         "status_updated_at": datetime.utcnow(),
         "is_active": True,
@@ -151,9 +186,14 @@ async def list_patients(
 
 @router.get("/{patient_id}", response_model=PatientResponse)
 async def get_patient(patient_id: str, db: AsyncIOMotorDatabase = Depends(get_db), user: User = Depends(get_current_user)):
-    patient = await db.patients.find_one({"_id": patient_id})
+    patient = await db.patients.find_one({"_id": patient_id, "is_active": True})
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+
+    if user.role not in ("nurse", "admin"):
+                link = await db.family_links.find_one({"user_id": user.id, "patient_id": patient_id})
+                if not link:
+                        raise HTTPException(status_code=403, detail="Not authorized to view this patient")
     return _patient_to_resp(patient)
 
 @router.patch("/{patient_id}/status")

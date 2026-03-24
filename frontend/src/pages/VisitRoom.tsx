@@ -336,7 +336,9 @@ export default function VisitRoom() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder={isListening ? "Listening..." : "Type a message..."}
-                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
+                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                    placeholder="Type a message..."
+                    className="flex-1 bg-slate-800 border border-slate-700 text-sm rounded-full pl-5 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner"
                   />
                   <button 
                     type="submit" 

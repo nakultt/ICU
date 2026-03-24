@@ -1,11 +1,44 @@
 import { motion } from 'framer-motion';
 import { FileText, NotebookTabs, Stethoscope } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import { getUserRole } from '../api';
+import { api, getUserRole } from '../api';
 import AppShell from '../components/layout/AppShell';
 import StatusBadge from '../components/ui/StatusBadge';
 
-const doctorReports = [
+type DoctorReport = {
+  checkup: string;
+  date: string;
+  doctor: string;
+  specialty: string;
+  summary: string;
+  plan: string;
+};
+
+type TimelineItem = {
+  time: string;
+  event: string;
+  detail: string;
+};
+
+type PatientDetailsData = {
+  id: string;
+  full_name: string;
+  bed_number: string;
+  ward: string;
+  current_status: string;
+  status_note: string;
+  status_updated_at?: string;
+  diagnosis?: string;
+  primary_unit?: string;
+  latest_report?: string;
+  nurse_note?: string;
+  nurse_notes?: string;
+  doctor_reports?: DoctorReport[];
+  care_timeline?: TimelineItem[];
+};
+
+const defaultDoctorReports: DoctorReport[] = [
   {
     checkup: 'Checkup 3',
     date: 'Today, 13:05',
@@ -32,7 +65,7 @@ const doctorReports = [
   },
 ];
 
-const timeline = [
+const defaultTimeline: TimelineItem[] = [
   { time: '13:05', event: 'Family call completed', detail: 'Positive emotional response recorded after 12-minute session.' },
   { time: '10:30', event: 'Clinical note added', detail: 'Patient responsive to medication adjustment.' },
   { time: '08:10', event: 'Vitals reviewed by nurse', detail: 'Heart rate and oxygen levels within expected range.' },
@@ -42,6 +75,43 @@ export default function PatientDetails() {
   const { id } = useParams<{ id: string }>();
   const role = getUserRole();
   const selectedFamilyPatientId = localStorage.getItem('visicare_family_patient_id');
+  const [patient, setPatient] = useState<PatientDetailsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const resolvedPatientId = useMemo(
+    () => (role === 'family' ? selectedFamilyPatientId || '' : id || ''),
+    [role, selectedFamilyPatientId, id],
+  );
+
+  useEffect(() => {
+    const loadPatient = async () => {
+      if (!resolvedPatientId) {
+        setError('Patient not found');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+        const details = await api.patients.getById(resolvedPatientId);
+        setPatient(details as PatientDetailsData);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Unable to load patient details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadPatient();
+  }, [resolvedPatientId]);
+
+  const doctorReports = patient?.doctor_reports?.length ? patient.doctor_reports : defaultDoctorReports;
+  const timeline = patient?.care_timeline?.length ? patient.care_timeline : defaultTimeline;
+  const updatedLabel = patient?.status_updated_at
+    ? new Date(patient.status_updated_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
+    : 'Today';
 
   if (role === 'family' && !selectedFamilyPatientId) {
     return <Navigate to="/family" replace />;
@@ -54,28 +124,42 @@ export default function PatientDetails() {
   return (
     <AppShell role="family">
       <div className="space-y-6">
+        {loading && (
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-3xl p-6">
+            <p className="text-sm text-slate-500 dark:text-slate-300">Loading patient details...</p>
+          </motion.section>
+        )}
+
+        {!loading && error && (
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-3xl p-6">
+            <p className="text-sm text-rose-600 dark:text-rose-300">{error}</p>
+          </motion.section>
+        )}
+
+        {!loading && !error && patient && (
+        <>
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-3xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-widest text-slate-500">Patient Overview</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">Aarav Sharma</h2>
+              <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">{patient.full_name}</h2>
             </div>
-            <StatusBadge status="stable" />
+            <StatusBadge status={patient.current_status?.toLowerCase() === 'critical' ? 'critical' : 'stable'} label={patient.current_status} />
           </div>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">Bed A-12 · ICU Critical Care Unit</p>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">Bed {patient.bed_number} · {patient.ward}</p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/80">
               <p className="text-xs uppercase tracking-wider text-slate-500">Current Status</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Stable and under observation</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{patient.status_note || patient.diagnosis || 'No status note'}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/80">
               <p className="text-xs uppercase tracking-wider text-slate-500">Last Updated</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Today, 13:05</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{updatedLabel}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/80">
               <p className="text-xs uppercase tracking-wider text-slate-500">Primary Unit</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Critical Care</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{patient.primary_unit || 'Critical Care'}</p>
             </div>
           </div>
         </motion.section>
@@ -110,11 +194,11 @@ export default function PatientDetails() {
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/80">
               <p className="text-xs uppercase tracking-wider text-slate-500">Latest Report</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Pulmonary response improving</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{patient.latest_report || 'No latest report yet'}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/80">
               <p className="text-xs uppercase tracking-wider text-slate-500">Nurse Note</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Continue monitored oxygen support.</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{patient.nurse_note || 'No nurse note yet'}</p>
             </div>
           </div>
 
@@ -122,7 +206,7 @@ export default function PatientDetails() {
             <p className="inline-flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
               <NotebookTabs size={15} /> Notes from Nurse
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-300">Patient remains stable and responsive. Family interaction encouraged daily.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{patient.nurse_notes || 'No additional notes from nurse.'}</p>
           </div>
         </motion.section>
 
@@ -143,6 +227,8 @@ export default function PatientDetails() {
             ))}
           </div>
         </motion.section>
+        </>
+        )}
       </div>
     </AppShell>
   );

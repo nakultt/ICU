@@ -27,7 +27,7 @@ export default function ThemeToggle() {
       <motion.span
         layout
         transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-        className="z-10 h-8 w-8 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg"
+        className="z-10 h-8 w-8 rounded-full brand-gradient shadow-lg"
         animate={{ x: theme === 'dark' ? 38 : 0 }}
       />
     </button>

@@ -41,11 +41,11 @@ export default function AppShell({ children, role }: AppShellProps) {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1500px] flex-col lg:flex-row">
         <aside className="glass-card m-4 rounded-3xl p-5 lg:sticky lg:top-4 lg:m-4 lg:h-[calc(100vh-2rem)] lg:w-72 lg:p-6">
           <div className="mb-8 flex items-center gap-3 px-2">
-            <div className="heartbeat rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 p-2.5 text-white shadow-md">
+            <div className="heartbeat brand-gradient rounded-2xl p-2.5 shadow-md">
               {role === 'family' ? <Shield size={18} /> : <Stethoscope size={18} />}
             </div>
             <div>
-              <p className="text-lg font-black text-slate-900 dark:text-slate-100">ICUConnect</p>
+              <p className="brand-heading text-lg font-black dark:text-slate-100">ICUConnect</p>
               <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">VisiCare Portal</p>
             </div>
           </div>
@@ -58,10 +58,10 @@ export default function AppShell({ children, role }: AppShellProps) {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                    `nav-link flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                       isActive
-                        ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200'
-                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/70'
+                        ? 'nav-link-active dark:bg-cyan-900/40 dark:text-cyan-200'
+                        : 'dark:text-slate-300 dark:hover:bg-slate-800/70'
                     }`
                   }
                 >
@@ -78,13 +78,13 @@ export default function AppShell({ children, role }: AppShellProps) {
           </div>
         </aside>
 
-        <div className="flex-1 px-4 pb-4 lg:pl-0">
-          <header className="glass-card sticky top-4 z-30 mt-4 flex items-center justify-between rounded-3xl px-5 py-4">
+        <div className="flex-1 px-4 pb-6 lg:pl-0">
+          <header className="glass-card sticky top-4 z-30 mt-4 mx-auto flex w-full max-w-[1180px] items-center justify-between rounded-3xl px-5 py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {role === 'family' ? 'Family Access' : 'Hospital Command Center'}
               </p>
-              <h1 className="text-xl font-black text-slate-900 dark:text-slate-100">Welcome to ICUConnect</h1>
+              <h1 className="brand-heading text-xl font-black dark:text-slate-100">Welcome to ICUConnect</h1>
               <p className="mt-1 inline-flex items-center rounded-full bg-cyan-100 px-3 py-1 text-[11px] font-bold tracking-wider text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200">
                 Signed in as {signedRole}
               </p>
@@ -125,7 +125,7 @@ export default function AppShell({ children, role }: AppShellProps) {
             </div>
           </header>
 
-          <main className="pb-4 pt-6">{children}</main>
+          <main className="mx-auto w-full max-w-[1180px] pb-6 pt-6">{children}</main>
         </div>
       </div>
     </div>
