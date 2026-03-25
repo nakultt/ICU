@@ -114,6 +114,8 @@ export default function FamilyDashboard() {
         localStorage.setItem('visicare_family_patient_id', alreadyLinked.id);
         pushToast({ type: 'success', title: 'Patient loaded', message: 'Showing corresponding patient details.' });
         setLinkCode('');
+        window.dispatchEvent(new Event('storage')); // Trigger update if listening, though full reload is safer
+        window.location.reload(); 
         return;
       }
 
@@ -131,6 +133,7 @@ export default function FamilyDashboard() {
         setSelectedPatientId(matched.id);
         setLookupDone(true);
         localStorage.setItem('visicare_family_patient_id', matched.id);
+        setTimeout(() => window.location.reload(), 500); // Reload to reveal hidden menu links
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not link patient';
@@ -197,15 +200,13 @@ export default function FamilyDashboard() {
             <div className="flex flex-col justify-between gap-6 lg:flex-row">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-widest text-slate-500">Linked Patient</p>
-                {patients.length > 0 ? (
+                {selectedPatient ? (
                   <select
-                    value={selectedPatient?.id || ''}
+                    value={selectedPatient.id}
                     onChange={(e) => setSelectedPatientId(e.target.value)}
                     className="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-cyan-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   >
-                    {patients.map((item) => (
-                      <option key={item.id} value={item.id}>{item.full_name} (Bed {item.bed_number})</option>
-                    ))}
+                    <option value={selectedPatient.id}>{selectedPatient.full_name} (Bed {selectedPatient.bed_number})</option>
                   </select>
                 ) : (
                   <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">No linked patients</h2>
@@ -213,11 +214,18 @@ export default function FamilyDashboard() {
 
                 {selectedPatient && (
                   <>
-                    <h2 className="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{selectedPatient.full_name}</h2>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100">{selectedPatient.full_name}</h2>
+                      <div className="rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-center dark:border-cyan-800/60 dark:bg-cyan-900/30">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400">Family Access Code</p>
+                        <p className="font-mono text-xl font-black tracking-widest text-cyan-800 dark:text-cyan-200">
+                          {selectedPatient.access_code || selectedPatient.id}
+                        </p>
+                      </div>
+                    </div>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <StatusBadge status={normalizeStatus(selectedPatient.current_status)} label={selectedPatient.current_status} />
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Bed {selectedPatient.bed_number} {selectedPatient.ward}</span>
-                  <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-200">Code {selectedPatient.access_code || selectedPatient.id}</span>
                 </div>
                 <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">Condition: {selectedPatient.diagnosis || 'N/A'}</p>
                 <p className="mt-1 text-xs text-slate-500">{selectedPatient.status_note || 'No status note available'}</p>

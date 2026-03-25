@@ -21,22 +21,30 @@ const adminLinks = [
 export default function AppShell({ children, role }: AppShellProps) {
   const location = useLocation();
   const selectedFamilyPatientId = localStorage.getItem('visicare_family_patient_id');
-  const familyLinks = [
+  const baseFamilyLinks = [
     { to: '/family', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/schedule', label: 'Schedule Visit', icon: CalendarDays },
     { to: '/notifications', label: 'My Notifications', icon: Bell },
+  ];
+  
+  const extendedFamilyLinks = [
+    { to: '/schedule', label: 'Schedule Visit', icon: CalendarDays },
     {
-      to: selectedFamilyPatientId ? `/patient/${selectedFamilyPatientId}` : '/family',
-      label: selectedFamilyPatientId ? 'Patient Report' : 'Patient Details',
+      to: `/patient/${selectedFamilyPatientId}`,
+      label: 'Patient Report',
       icon: UserRound,
     },
     { to: '/family/live-monitor', label: 'Live Monitor', icon: Activity },
     { to: '/family/report', label: 'Reports (PDF)', icon: FileText },
-    { to: selectedFamilyPatientId ? `/family/dashboard/ai-summary/${selectedFamilyPatientId}` : '#', label: 'AI Summary', icon: Sparkles },
-    { to: selectedFamilyPatientId ? `/family/dashboard/ai-chat/${selectedFamilyPatientId}` : '#', label: 'Ask AI', icon: Bot },
-    { to: '/family', label: 'Video Call', icon: Video },
+    { to: `/family/dashboard/ai-summary/${selectedFamilyPatientId}`, label: 'AI Summary', icon: Sparkles },
+    { to: `/family/dashboard/ai-chat/${selectedFamilyPatientId}`, label: 'Ask AI', icon: Bot },
+    { to: `/call/${selectedFamilyPatientId}`, label: 'Video Call', icon: Video },
     { to: '/messages', label: 'Family Messages', icon: MessageSquareText },
   ];
+
+  const familyLinks = selectedFamilyPatientId 
+    ? [...baseFamilyLinks, ...extendedFamilyLinks] 
+    : baseFamilyLinks;
+
   const links = role === 'family' ? familyLinks : adminLinks;
   const signedRole = (getUserRole() || role).toUpperCase();
   const signedName = getUserName() || (role === 'family' ? 'Family User' : 'Nurse User');
@@ -86,27 +94,29 @@ export default function AppShell({ children, role }: AppShellProps) {
             })}
           </nav>
 
-          <div className="mt-8 flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/70">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Theme</p>
-            <ThemeToggle />
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/75 p-3 dark:border-slate-700 dark:bg-slate-900/75">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Profile</p>
-            <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
-              <UserRound size={14} />
-              <span>{signedName}</span>
+          <div className="mt-auto">
+            <div className="mt-8 flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/70">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Theme</p>
+              <ThemeToggle />
             </div>
-            <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-300">{signedRole}</p>
-          </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-bold text-white"
-          >
-            <LogOut size={14} /> Logout
-          </button>
+            <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/75 p-3 dark:border-slate-700 dark:bg-slate-900/75">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Profile</p>
+              <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                <UserRound size={14} />
+                <span>{signedName}</span>
+              </div>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-300">{signedRole}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-bold text-white"
+            >
+              <LogOut size={14} /> Logout
+            </button>
+          </div>
         </aside>
 
         <div className="flex-1 px-4 pb-6 lg:pl-0">
