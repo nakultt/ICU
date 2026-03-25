@@ -1,4 +1,4 @@
-import { Activity, Bell, CalendarDays, FileText, LayoutDashboard, LogOut, Shield, Stethoscope, UserRound, Video, MessageSquareText } from 'lucide-react';
+import { Activity, Bell, CalendarDays, FileText, LayoutDashboard, LogOut, Shield, Stethoscope, UserRound, Video, MessageSquareText, Sparkles, Bot } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import ThemeToggle from '../ui/ThemeToggle';
@@ -32,6 +32,8 @@ export default function AppShell({ children, role }: AppShellProps) {
     },
     { to: '/family/live-monitor', label: 'Live Monitor', icon: Activity },
     { to: '/family/report', label: 'Reports (PDF)', icon: FileText },
+    { to: selectedFamilyPatientId ? `/family/dashboard/ai-summary/${selectedFamilyPatientId}` : '#', label: 'AI Summary', icon: Sparkles },
+    { to: selectedFamilyPatientId ? `/family/dashboard/ai-chat/${selectedFamilyPatientId}` : '#', label: 'Ask AI', icon: Bot },
     { to: '/family', label: 'Video Call', icon: Video },
     { to: '/messages', label: 'Family Messages', icon: MessageSquareText },
   ];

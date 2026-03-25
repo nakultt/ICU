@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Bell, CalendarDays, Link2, MessageSquareText, PhoneCall, Video } from 'lucide-react';
+import { Bell, CalendarDays, Link2, MessageSquareText, PhoneCall, Video, Sparkles, Bot } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
@@ -258,6 +258,18 @@ export default function FamilyDashboard() {
                 >
                   <MessageSquareText size={17} /> Send Message
                 </button>
+                <Link
+                  to={selectedPatient ? `/family/dashboard/ai-summary/${selectedPatient.id}` : '#'}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-900/30 dark:text-indigo-200"
+                >
+                  <Sparkles size={17} /> AI Patient Summary
+                </Link>
+                <Link
+                  to={selectedPatient ? `/family/dashboard/ai-chat/${selectedPatient.id}` : '#'}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-purple-200 bg-purple-50 px-5 py-3 text-sm font-bold text-purple-700 transition hover:bg-purple-100 dark:border-purple-900/60 dark:bg-purple-900/30 dark:text-purple-200"
+                >
+                  <Bot size={17} /> Ask VisiCare AI
+                </Link>
               </div>
             </div>
           </motion.section>

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import init_db
-from .routes import auth, patients, visits, signaling
+from .routes import auth, patients, visits, signaling, ai
 
 app = FastAPI(title="VisiCare API")
 
@@ -31,3 +31,4 @@ app.include_router(auth.router)
 app.include_router(patients.router)
 app.include_router(visits.router)
 app.include_router(signaling.router)
+app.include_router(ai.router, prefix="/api/ai", tags=["AI"])

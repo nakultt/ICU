@@ -84,3 +84,11 @@ class AuditLog(MongoBaseModel):
     resource_id: str = ""
     details: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PatientDocumentChunk(MongoBaseModel):
+    patient_id: str
+    chunk_text: str
+    embedding: List[float]
+    metadata: dict = {}
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+

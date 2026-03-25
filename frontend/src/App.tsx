@@ -21,7 +21,8 @@ import MessagesPage from './pages/Messages';
 import NurseMonitoringDashboard from './pages/NurseMonitoringDashboard';
 import PatientLiveMonitoring from './pages/PatientLiveMonitoring';
 import PatientReportPage from './pages/PatientReportPage';
-
+import AISummaryPage from './pages/AISummaryPage';
+import AIChatPage from './pages/AIChatPage';
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const token = getToken();
   const role = getUserRole();
@@ -65,6 +66,8 @@ function AnimatedRoutes() {
           <Route path="/family/report" element={<ProtectedRoute allowedRoles={['family', 'nurse', 'admin']}><PatientReportPage /></ProtectedRoute>} />
           <Route path="/call/:id" element={<ProtectedRoute allowedRoles={['family', 'nurse', 'admin']}><VisitRoom /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute allowedRoles={['family']}><MessagesPage /></ProtectedRoute>} />
+          <Route path="/family/dashboard/ai-summary/:id" element={<ProtectedRoute allowedRoles={['family']}><AISummaryPage /></ProtectedRoute>} />
+          <Route path="/family/dashboard/ai-chat/:id" element={<ProtectedRoute allowedRoles={['family']}><AIChatPage /></ProtectedRoute>} />
           
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

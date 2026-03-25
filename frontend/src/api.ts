@@ -63,5 +63,12 @@ export const api = {
     complete: (id: string) => request(`/visits/${id}/complete`, { method: "PATCH" }),
     logMood: (visitId: string, score: number) => 
       request("/visits/mood", { method: "POST", body: JSON.stringify({ visit_id: visitId, score }) }),
+  },
+
+  ai: {
+    getSummary: (patientId: string) => request(`/ai/summary/${patientId}`),
+    chat: (patientId: string, message: string, history: any[] = []) => 
+      request(`/ai/chat/${patientId}`, { method: "POST", body: JSON.stringify({ message, history }) }),
+    indexStats: (patientId: string) => request(`/ai/index/${patientId}`, { method: "POST" })
   }
 };
