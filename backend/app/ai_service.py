@@ -1,5 +1,6 @@
 import math
 from typing import List, Dict, Any
+from bson import ObjectId
 from google import genai
 from app.config import settings
 from app.database import get_db
@@ -152,15 +153,25 @@ async def generate_patient_summary(patient_id: str) -> str:
     patient = await db.patients.find_one({"_id": patient_id})
     if not patient:
         raise ValueError("Patient not found")
+        
+    logs_cursor = db.monitoring_logs.find({"patientId": patient_id}).sort("createdAt", -1).limit(50)
+    logs = await logs_cursor.to_list(length=50)
+
+    # Sanitize slightly to avoid ObjectId issues with JSON serialization
+    patient_copy = {k: str(v) if isinstance(v, ObjectId) else v for k, v in patient.items()}
+    logs_copy = [{k: str(v) if isinstance(v, ObjectId) else v for k, v in log.items()} for log in logs]
 
     prompt = f"""
     You are an expert medical AI assistant for VisiCare. 
-    Review the following patient data and write a compassionate, easy-to-understand comprehensive summary for the family.
+    Review the following patient data and monitoring logs and write a compassionate, easy-to-understand comprehensive summary for the family.
     Highlight the diagnosis, current status, recent doctor reports, and any nursing notes.
     Format with markdown headers, bullet points, and use a reassuring but factual tone.
 
-    Patient JSON Data:
-    {patient}
+    Patient Main Profile:
+    {patient_copy}
+    
+    Recent Monitoring Logs and Reports:
+    {logs_copy}
     """
 
     try:
@@ -173,16 +184,34 @@ async def generate_patient_summary(patient_id: str) -> str:
         return f"Error generating summary: {str(e)}"
 
 async def chat_with_patient_context(patient_id: str, user_message: str, history: List[Dict[str, str]]) -> str:
-    """RAG-based chat matching user message against patient knowledge chunks."""
-    # First, fetch semantic context
-    context = await retrieve_relevant_context(patient_id, user_message, top_k=4)
+    """Chat matching user message against direct patient data context for highest accuracy."""
+    db = await get_database()
+    
+    # Try fetching patient and logs for exact, real-term factual context without just relying on chunks
+    patient = await db.patients.find_one({"_id": patient_id})
+    if patient:
+        patient_copy = {k: str(v) if isinstance(v, ObjectId) else v for k, v in patient.items()}
+    else:
+        patient_copy = {"error": "Patient not found"}
+        
+    logs_cursor = db.monitoring_logs.find({"patientId": patient_id}).sort("createdAt", -1).limit(50)
+    logs = await logs_cursor.to_list(length=50)
+    logs_copy = [{k: str(v) if isinstance(v, ObjectId) else v for k, v in log.items()} for log in logs]
+
+    # Also grab RAG context if it exists, to capture any chunked historic documents
+    context = await retrieve_relevant_context(patient_id, user_message, top_k=3)
 
     sys_instruction = f"""
     You are the VisiCare AI Assistant responding to a family member's questions about a patient in the ICU.
-    Use ONLY the factual context provided below to answer their questions accurately. 
+    Use ONLY the factual context provided below to answer their questions accurately. Focus heavily on both `Doctor Reports` and `Monitoring Logs`.
     If the context doesn't contain the answer, politely say you don't have that specific information.
     Be compassionate, supportive, and clear. Avoid overly dense medical jargon without explanation.
     
+    --- REAL-TIME PATIENT DATA ---
+    Profile: {patient_copy}
+    Recent Logs/Reports/Vitals: {logs_copy}
+    
+    --- EMBEDDED HISTORIC DATA (RAG) ---
     {context}
     """
 

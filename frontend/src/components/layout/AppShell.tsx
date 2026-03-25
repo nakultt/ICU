@@ -72,7 +72,7 @@ export default function AppShell({ children, role }: AppShellProps) {
             </div>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="flex-1 space-y-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
             {links.map((item) => {
               const Icon = item.icon;
               return (
@@ -80,7 +80,7 @@ export default function AppShell({ children, role }: AppShellProps) {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `nav-link flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                    `nav-link flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${
                       isActive
                         ? 'nav-link-active dark:bg-cyan-900/40 dark:text-cyan-200'
                         : 'dark:text-slate-300 dark:hover:bg-slate-800/70'
@@ -94,8 +94,8 @@ export default function AppShell({ children, role }: AppShellProps) {
             })}
           </nav>
 
-          <div className="mt-auto">
-            <div className="mt-8 flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/70">
+          <div className="mt-auto pt-2">
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/70">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Theme</p>
               <ThemeToggle />
             </div>
