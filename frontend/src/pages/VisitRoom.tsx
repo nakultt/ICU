@@ -2,9 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, getUserRole } from '../api';
 import { useVideoCall } from '../hooks/useVideoCall';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X, Volume2, VolumeX, AudioLines, ShieldCheck } from 'lucide-react';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, MessageSquare, PhoneOff, Heart, Send, X, Volume2, VolumeX, AudioLines, ShieldCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpeechToText } from '../hooks/useSpeechToText';
+import { useFaceExpression } from '../hooks/useFaceExpression';
 
 export default function VisitRoom() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +34,8 @@ export default function VisitRoom() {
     sendMessage,
     isTTSEnabled,
     toggleTTS,
+    remoteDistressed,
+    sendDistressState,
     endCall,
     toggleMic,
     toggleVideo,
@@ -41,6 +44,17 @@ export default function VisitRoom() {
     peerId,
     autoStart: role === 'nurse', // Nurse auto-initiates
   });
+
+  const { isDistressed } = useFaceExpression({
+    videoRef: localVideoRef,
+    enabled: role === 'family' && status === 'connected' && !isVideoOff
+  });
+
+  useEffect(() => {
+    if (role === 'family') {
+      sendDistressState(isDistressed);
+    }
+  }, [isDistressed, role, sendDistressState]);
 
   const handleTranscript = useCallback((text: string) => {
     setChatInput((prev) => {
@@ -180,9 +194,26 @@ export default function VisitRoom() {
                 ref={remoteVideoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover transition-all duration-700 ${remoteDistressed && isNurseView ? 'blur-2xl opacity-40 grayscale' : ''}`}
               />
-              {status !== 'connected' && (
+              
+              {remoteDistressed && isNurseView && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-2xl z-30">
+                  <div className="w-24 h-24 bg-rose-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse ring-8 ring-rose-500/30">
+                    <AlertCircle className="w-12 h-12 text-rose-400" />
+                  </div>
+                  <h3 className="text-3xl font-black text-white mb-2 tracking-wide">Network Issue</h3>
+                  <p className="text-slate-200 text-lg font-medium">Reconnecting to family securely...</p>
+                  
+                  <div className="mt-8 flex gap-3">
+                     <div className="w-3 h-3 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                     <div className="w-3 h-3 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                     <div className="w-3 h-3 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              )}
+
+              {status !== 'connected' && !remoteDistressed && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/65 dark:bg-slate-900/60 backdrop-blur-sm z-10">
                   <div className="text-center space-y-6">
                     <div className="w-24 h-24 mx-auto bg-white/90 dark:bg-slate-800/80 rounded-full flex items-center justify-center ring-1 ring-slate-300 dark:ring-white/10 shadow-2xl">
@@ -215,6 +246,28 @@ export default function VisitRoom() {
               <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs px-3 py-1 rounded-full font-bold shadow-lg">
                 You
               </div>
+              
+              {/* Distress Warning for Family */}
+              <AnimatePresence>
+                {isDistressed && role === 'family' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute inset-0 z-30 flex items-center justify-center p-2"
+                  >
+                    <div className="bg-rose-600/90 backdrop-blur-md p-3 rounded-2xl border border-rose-400/50 shadow-2xl text-center">
+                      <AlertCircle className="w-6 h-6 text-white mx-auto mb-1 animate-bounce" />
+                      <p className="text-[10px] font-black text-white uppercase tracking-tighter leading-tight">
+                        Emotional Alert
+                      </p>
+                      <p className="text-[9px] text-rose-100 font-bold leading-tight mt-1">
+                        Please stay calm. Your distress is being shielded to protect the patient's recovery process.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </div>
 

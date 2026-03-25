@@ -43,6 +43,7 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
+  const [remoteDistressed, setRemoteDistressed] = useState(false);
   const hasStartedRef = useRef(false);
   const autoStartRef = useRef(autoStart);
   autoStartRef.current = autoStart;
@@ -242,6 +243,12 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
           }
           break;
         }
+
+        case "distress_state":
+          if (msg.from !== peerId) {
+            setRemoteDistressed(msg.isDistressed);
+          }
+          break;
       }
     };
 
@@ -338,6 +345,8 @@ export function useVideoCall({ roomId, peerId, autoStart = false }: UseVideoCall
     sendMessage,
     isTTSEnabled,
     toggleTTS,
+    remoteDistressed,
+    sendDistressState: (state: boolean) => sendRef.current({ type: "distress_state", isDistressed: state }),
     startCall: doStartCall,
     endCall,
     toggleMic,
